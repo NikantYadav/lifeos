@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Life OS
 
-## Getting Started
+A six-month personal operating plan and daily tracker — schedule, plans, weekly scorecard,
+social funnel, approach log, side quests, body/weight tracking, and phase overview.
 
-First, run the development server:
+Migrated from a single static `lifeos.html` file into a Next.js (App Router) app.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Next.js 16 (App Router, TypeScript)
+- Plain CSS (ported 1:1 from the original design, no Tailwind)
+- Vercel KV (Upstash Redis) for persistence — one JSON blob holding all app state
+  (days, people, approaches, weights, quests), read/written through `/api/state`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Install dependencies:
 
-## Learn More
+   ```bash
+   npm install
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. Set up Redis credentials (see below), either in `.env.local` or by running
+   `vercel env pull .env.local` once the project is linked and KV is attached.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. Run the dev server:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   npm run dev
+   ```
 
-## Deploy on Vercel
+   Open [http://localhost:3000](http://localhost:3000).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Persistence: Vercel KV (Upstash Redis)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All state (checkboxes, counters, people, approach log, quests, weight entries) is stored
+as a single JSON document in Redis under the key `lifeos:v1`, via `/api/state` (`GET`/`PUT`).
+
+To wire this up:
+
+1. In the [Vercel dashboard](https://vercel.com/dashboard), open this project → **Storage**
+   → **Create Database** → **Upstash** → **Redis** (this is what's labeled "Vercel KV").
+2. Connect it to this project. Vercel automatically injects `KV_REST_API_URL` and
+   `KV_REST_API_TOKEN` into your Production/Preview/Development environments.
+3. For local dev, pull those into `.env.local`:
+
+   ```bash
+   vercel env pull .env.local
+   ```
+
+   Or copy `.env.local.example` to `.env.local` and fill in the values from the
+   Upstash console.
+
+There is a single shared state document — this app has no auth/multi-user support, it's
+built for one person's personal dashboard.
+
+## Deploying to Vercel
+
+1. Push this repo to GitHub (or GitLab/Bitbucket).
+2. [Import the project into Vercel](https://vercel.com/new).
+3. Attach a Vercel KV (Upstash Redis) database as described above **before** the first
+   deploy, or add it afterward and redeploy — the app will 500 on `/api/state` until the
+   `KV_REST_API_URL` / `KV_REST_API_TOKEN` env vars are present.
+4. Deploy. No other configuration is required.
+
+## Project structure
+
+- `src/lib/data.ts` — all static content (weekly timetable, plans, phases, quest ideas, etc.)
+- `src/lib/types.ts` — shared TypeScript types for the persisted app state
+- `src/lib/dates.ts` — date/week-index helpers
+- `src/lib/redis.ts` — Redis client
+- `src/lib/useAppState.ts` — client hook: loads state on mount, debounce-saves on change
+- `src/app/api/state/route.ts` — `GET`/`PUT` route handler backing the hook above
+- `src/components/` — one component per tab, plus shared `Hero`/`Nav`/`SchedList`

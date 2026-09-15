@@ -1,0 +1,99 @@
+'use client';
+
+import { useState } from 'react';
+import { DAYNAMES, SPLIT } from '@/lib/data';
+import { AppState } from '@/lib/types';
+
+export default function BodyPanel({
+  state,
+  update,
+  today,
+}: {
+  state: AppState;
+  update: (fn: (draft: AppState) => void) => void;
+  today: Date;
+}) {
+  const [kg, setKg] = useState('');
+  const todayKey = today.toISOString().slice(0, 10);
+  const todayAbbrev = DAYNAMES[today.getDay()].slice(0, 3);
+
+  const add = () => {
+    const v = parseFloat(kg);
+    if (!v) return;
+    update((draft) => {
+      draft.weights.push({ id: Date.now(), date: todayKey, kg: v });
+      draft.weights.sort((a, b) => (a.date < b.date ? -1 : 1));
+    });
+    setKg('');
+  };
+
+  const remove = (id: number) => {
+    update((draft) => {
+      draft.weights = draft.weights.filter((w) => w.id !== id);
+    });
+  };
+
+  const weights = state.weights;
+  const first = weights[0]?.kg;
+  const list = [...weights].reverse();
+
+  return (
+    <section className="panel">
+      <h2>The split — 5 days, Monday to Friday</h2>
+      <div className="box">
+        <ul className="sched">
+          {SPLIT.map(([d, f, work]) => (
+            <li key={d} className={todayAbbrev === d ? 'key' : undefined}>
+              <span className="t">{d}</span>
+              <span className="d">
+                {f}
+                <em className="n">{work}</em>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <h2>Weight</h2>
+      <div className="box pad">
+        <div className="form">
+          <div>
+            <label className="lbl" htmlFor="wKg">Weight (kg)</label>
+            <input id="wKg" type="number" step="0.1" placeholder="80.0" value={kg} onChange={(e) => setKg(e.target.value)} />
+          </div>
+          <div>
+            <button className="btn" onClick={add}>Record</button>
+          </div>
+        </div>
+        <p className="note" style={{ margin: '12px 0 0' }}>
+          80 kg now, about 86 kg by March. Weigh once a week, same morning.
+        </p>
+      </div>
+
+      <div className="box" style={{ marginTop: 12 }}>
+        {weights.length === 0 ? (
+          <div className="empty">No weigh-ins. Record today&apos;s as your baseline.</div>
+        ) : (
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Weight</th><th>Change</th><th></th></tr>
+            </thead>
+            <tbody>
+              {list.map((r) => {
+                const d = r.kg - first;
+                return (
+                  <tr key={r.id}>
+                    <td>{r.date}</td>
+                    <td>{r.kg.toFixed(1)} kg</td>
+                    <td>{(d >= 0 ? '+' : '') + d.toFixed(1)} kg</td>
+                    <td><button className="x" onClick={() => remove(r.id)}>×</button></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
+  );
+}
