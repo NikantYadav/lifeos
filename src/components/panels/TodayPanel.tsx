@@ -64,31 +64,31 @@ export default function TodayPanel({
       <HabitList state={state} update={update} todayKey={todayKey} today={now ?? new Date(0)} />
       <MilestonePrompt state={state} update={update} todayKey={todayKey} today={now ?? new Date(0)} />
 
+      <h2>Tick off</h2>
+      <div className="checks">
+        {state.checks.map(([k, lbl, sub]) => (
+          <div key={k}>
+            <button
+              className={'chk' + (day.c[k] ? ' on' : '')}
+              onClick={() => toggleCheck(k)}
+              aria-pressed={!!day.c[k]}
+            >
+              <i />
+              <span>
+                {lbl}
+                {sub ? <em>{sub}</em> : null}
+              </span>
+            </button>
+            {!day.c[k] && <SkipReasonPrompt state={state} update={update} date={todayKey} checkKey={k} />}
+          </div>
+        ))}
+      </div>
+
       <details className="day-details">
         <summary>Show full day — {label}</summary>
 
         <div className="box" style={{ marginTop: 8 }}>
           <SchedList rows={rows} nowIndex={nowIndex} />
-        </div>
-
-        <h2>Tick off</h2>
-        <div className="checks">
-          {state.checks.map(([k, lbl, sub]) => (
-            <div key={k}>
-              <button
-                className={'chk' + (day.c[k] ? ' on' : '')}
-                onClick={() => toggleCheck(k)}
-                aria-pressed={!!day.c[k]}
-              >
-                <i />
-                <span>
-                  {lbl}
-                  {sub ? <em>{sub}</em> : null}
-                </span>
-              </button>
-              {!day.c[k] && <SkipReasonPrompt state={state} update={update} date={todayKey} checkKey={k} />}
-            </div>
-          ))}
         </div>
 
         <h2>Count</h2>

@@ -250,8 +250,6 @@ export const SEED_WEEK_GOALS: Record<string, number> = {
 export const SEED_TASKS: Omit<Task, 'id' | 'createdAt' | 'status'>[] = [
   { title: 'Book the dermatologist', detail: 'Any dermatology clinic in Marathahalli or Whitefield. ₹700–1,500.', planId: 'skin', triggerWeek: 0 },
   { title: 'Book four Tuesday Playo slots', detail: 'Same badminton slot, four weeks running — same regulars come back.', planId: 'social', triggerWeek: 0 },
-  { title: 'Pick your café', detail: 'One café in Marathahalli or Brookefield. Go every Monday from here on.', planId: 'places', triggerWeek: 0 },
-  { title: 'Start the Bangalore guide', detail: 'A Google Maps list of your actual favourite spots — ongoing, add to it as you go.', planId: 'places', triggerWeek: 0 },
   { title: 'Baseline photos and weight', detail: 'Your before. It will be bad — that is the point. Gets you on the apps now.', planId: 'dating', triggerWeek: 1 },
   { title: 'Start the flat search', detail: 'Zone A and toward Kadubeesanahalli — Marathahalli, AECS Layout, Munnekolala, Doddanekkundi, Kundalahalli.', planId: 'money', triggerWeek: 4 },
   { title: 'Book a swimming batch', detail: 'Coached adult beginner batch, not open swim. Machaxi Nadando, Varthur or a backup.', planId: 'swim', triggerWeek: 4 },
@@ -264,7 +262,6 @@ export const SEED_TASKS: Omit<Task, 'id' | 'createdAt' | 'status'>[] = [
 export const SEED_HABITS: Omit<Habit, 'id' | 'createdAt'>[] = [
   { title: 'Photo drill — 10 min', planId: 'dating', cadence: { kind: 'weeklyOnDays', days: [1, 4] } },
   { title: 'Self-timer set — 30 shots', planId: 'dating', cadence: { kind: 'everyNWeeks', n: 4 } },
-  { title: 'Barber', planId: 'style', cadence: { kind: 'everyNDays', n: 21 } },
   { title: 'Monthly startup review', planId: 'startup', cadence: { kind: 'everyNWeeks', n: 4 } },
 ];
 

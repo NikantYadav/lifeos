@@ -296,10 +296,11 @@ function milestoneCheckIn(v: unknown): MilestoneCheckIn | null {
   };
 }
 
-const DIFF_KINDS = ['plan', 'schedule', 'weekGoals'] as const;
+const DIFF_KINDS = ['plan', 'schedule', 'weekGoals', 'task', 'habit'] as const;
 // 'bad' and 'ask' are deliberately absent — a diff naming either is dropped,
 // independent of the type-level exclusion in ProposedDiff['field'].
 const DIFF_FIELDS = ['aim', 'when', 'where', 'how', 'quota', 'warn', 'milestones'] as const;
+const DIFF_OPS = ['add', 'drop', 'retime'] as const;
 
 function proposedDiff(v: unknown): ProposedDiff | null {
   if (!isObj(v)) return null;
@@ -308,12 +309,20 @@ function proposedDiff(v: unknown): ProposedDiff | null {
   const field = typeof v.field === 'string' ? v.field : undefined;
   if (field && !(DIFF_FIELDS as readonly string[]).includes(field)) return null;
   const dayOfWeek = finite(v.dayOfWeek);
+  const op = typeof v.op === 'string' ? v.op : undefined;
+  if (op && !(DIFF_OPS as readonly string[]).includes(op)) return null;
+  const triggerWeek = finite(v.triggerWeek);
   return {
     kind: kind as ProposedDiff['kind'],
     planId: typeof v.planId === 'string' ? v.planId : undefined,
     field: field as ProposedDiff['field'],
     dayOfWeek: dayOfWeek !== null ? Math.round(dayOfWeek) : undefined,
     key: typeof v.key === 'string' ? v.key : undefined,
+    op: op as ProposedDiff['op'],
+    existingId: typeof v.existingId === 'string' ? v.existingId : undefined,
+    title: typeof v.title === 'string' ? v.title : undefined,
+    detail: typeof v.detail === 'string' ? v.detail : undefined,
+    triggerWeek: triggerWeek !== null ? Math.round(triggerWeek) : undefined,
     before: v.before,
     after: v.after,
     reason: str(v.reason),

@@ -114,13 +114,25 @@ export interface MilestoneCheckIn {
  * A single proposed change from a Sunday review. `field` deliberately excludes
  * 'bad' | 'ask' at the type level — those plan fields are fixed text and can
  * never be an AI-review mutation target.
+ *
+ * 'task' and 'habit' diffs let the review add, drop, or retime queue items —
+ * still gated behind the same accept/edit/reject flow as everything else;
+ * nothing here writes to AppState until the user applies it.
  */
 export interface ProposedDiff {
-  kind: 'plan' | 'schedule' | 'weekGoals';
+  kind: 'plan' | 'schedule' | 'weekGoals' | 'task' | 'habit';
   planId?: string;
   field?: 'aim' | 'when' | 'where' | 'how' | 'quota' | 'warn' | 'milestones';
   dayOfWeek?: number;
   key?: string;
+
+  /** task/habit diffs only. 'add' has no existingId; 'drop'/'retime' require one. */
+  op?: 'add' | 'drop' | 'retime';
+  existingId?: string;
+  title?: string;
+  detail?: string;
+  triggerWeek?: number;
+
   before: unknown;
   after: unknown;
   reason: string;

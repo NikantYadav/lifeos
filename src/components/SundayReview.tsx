@@ -18,7 +18,14 @@ function formatValue(v: unknown): string {
 function diffLabel(d: ProposedDiff): string {
   if (d.kind === 'plan') return `${d.planId ?? 'plan'} · ${d.field ?? ''}`;
   if (d.kind === 'schedule') return `Schedule · day ${d.dayOfWeek}`;
-  return `Weekly goal · ${d.key}`;
+  if (d.kind === 'weekGoals') return `Weekly goal · ${d.key}`;
+  if (d.kind === 'task') return `Task · ${d.op}`;
+  return `Habit · ${d.op}`;
+}
+
+/** task/habit diffs carry structured fields (title/detail/triggerWeek), not one scalar value — no free-text edit for these. */
+function isEditable(d: ProposedDiff): boolean {
+  return d.kind === 'plan' || d.kind === 'schedule' || d.kind === 'weekGoals';
 }
 
 function applyDiff(draft: AppState, diff: ProposedDiff, value: unknown): void {
@@ -33,6 +40,42 @@ function applyDiff(draft: AppState, diff: ProposedDiff, value: unknown): void {
   } else if (diff.kind === 'weekGoals' && diff.key) {
     const n = Number(value);
     if (Number.isFinite(n)) draft.weekGoals[diff.key] = n;
+  } else if (diff.kind === 'task') {
+    if (diff.op === 'add' && diff.title) {
+      draft.tasks.push({
+        id: newId(),
+        title: diff.title,
+        detail: diff.detail ?? '',
+        planId: diff.planId,
+        triggerWeek: diff.triggerWeek ?? 0,
+        status: 'pending',
+        createdAt: Date.now(),
+      });
+    } else if (diff.op === 'drop' && diff.existingId) {
+      const t = draft.tasks.find((x) => x.id === diff.existingId);
+      if (t) {
+        t.status = 'dropped';
+        t.droppedAt = new Date().toISOString().slice(0, 10);
+        t.droppedReason = 'Dropped via Sunday review: ' + diff.reason;
+      }
+    } else if (diff.op === 'retime' && diff.existingId && diff.triggerWeek !== undefined) {
+      const t = draft.tasks.find((x) => x.id === diff.existingId);
+      if (t) t.triggerWeek = diff.triggerWeek;
+    }
+  } else if (diff.kind === 'habit') {
+    if (diff.op === 'add' && diff.title) {
+      draft.habits.push({
+        id: newId(),
+        title: diff.title,
+        planId: diff.planId,
+        // No structural cadence in the diff (see gemini.ts prompt) — default
+        // to weekly and let the user adjust it if it isn't quite right.
+        cadence: { kind: 'everyNWeeks', n: 1 },
+        createdAt: Date.now(),
+      });
+    } else if (diff.op === 'drop' && diff.existingId) {
+      draft.habits = draft.habits.filter((h) => h.id !== diff.existingId);
+    }
   }
 }
 
@@ -140,6 +183,7 @@ export default function SundayReview({
 
           {review.proposedDiffs.map((diff, i) => {
             const decision = decisions[i];
+            const editable = isEditable(diff);
             return (
               <div className={'diff-card' + (decision ? ` decided ${decision}` : '')} key={i}>
                 <div className="diff-reason">{diffLabel(diff)} — {diff.reason}</div>
@@ -147,7 +191,7 @@ export default function SundayReview({
                   <div className="diff-before">{formatValue(diff.before)}</div>
                   <div className="diff-after">{formatValue(diff.after)}</div>
                 </div>
-                {decision === 'edited' && (
+                {decision === 'edited' && editable && (
                   <textarea
                     value={editValues[i] ?? formatValue(diff.after)}
                     onChange={(e) => setEditValues((prev) => ({ ...prev, [i]: e.target.value }))}
@@ -155,7 +199,7 @@ export default function SundayReview({
                 )}
                 <div className="diff-actions">
                   <button onClick={() => decide(i, 'accepted')}>Accept</button>
-                  <button onClick={() => decide(i, 'edited')}>Edit</button>
+                  {editable && <button onClick={() => decide(i, 'edited')}>Edit</button>}
                   <button onClick={() => decide(i, 'rejected')}>Reject</button>
                 </div>
               </div>
