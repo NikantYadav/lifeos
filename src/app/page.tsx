@@ -12,7 +12,6 @@ import PlansPanel from '@/components/panels/PlansPanel';
 import WeekPanel from '@/components/panels/WeekPanel';
 import PeoplePanel from '@/components/panels/PeoplePanel';
 import RepsPanel from '@/components/panels/RepsPanel';
-import QuestsPanel from '@/components/panels/QuestsPanel';
 import BodyPanel from '@/components/panels/BodyPanel';
 import PhasesPanel from '@/components/panels/PhasesPanel';
 
@@ -40,7 +39,6 @@ export default function Home() {
         <PeoplePanel state={state} update={update} todayKey={todayKey} today={today} />
       )}
       {tab === 'reps' && <RepsPanel state={state} update={update} todayKey={todayKey} />}
-      {tab === 'quests' && <QuestsPanel state={state} update={update} todayKey={todayKey} />}
       {tab === 'body' && <BodyPanel state={state} update={update} today={today} />}
       {tab === 'phases' && <PhasesPanel curWeek={curWeek} />}
 

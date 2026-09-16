@@ -25,13 +25,6 @@ export interface Approach {
   lesson: string;
 }
 
-export interface Quest {
-  id: number;
-  date: string;
-  what: string;
-  who: string;
-}
-
 export interface WeightEntry {
   id: number;
   date: string;
@@ -43,7 +36,6 @@ export interface AppState {
   people: Person[];
   approaches: Approach[];
   weights: WeightEntry[];
-  quests: Quest[];
 }
 
 export const EMPTY_STATE: AppState = {
@@ -51,5 +43,4 @@ export const EMPTY_STATE: AppState = {
   people: [],
   approaches: [],
   weights: [],
-  quests: [],
 };

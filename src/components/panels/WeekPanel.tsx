@@ -7,7 +7,6 @@ const WEEK_ROWS: [string, string, number][] = [
   ['hours', 'Startup hours', 13],
   ['followups', 'Follow-ups', 1],
   ['gym', 'Gym sessions', 5],
-  ['sidequest', 'Side quest', 1],
   ['convos', 'Conversations', 5],
   ['approaches', 'Approaches', 3],
   ['ig', 'Instagram exchanges', 2],
@@ -27,7 +26,6 @@ function weekTotals(state: AppState, wi: number) {
       if (d.c.gym) t.gym++;
       if (d.c.out) t.out++;
       if (d.c.protein) t.protein++;
-      if (d.c.sidequest) t.sidequest++;
     }
   });
   return t;

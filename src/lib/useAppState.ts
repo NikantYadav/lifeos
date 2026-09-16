@@ -56,7 +56,6 @@ export function useAppState() {
         people: [...prev.people],
         approaches: [...prev.approaches],
         weights: [...prev.weights],
-        quests: [...prev.quests],
       };
       updater(next);
       return next;

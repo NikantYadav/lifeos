@@ -19,16 +19,28 @@ export default function PlansPanel() {
 
   return (
     <section className="panel">
-      <div className="pills">
-        {PLANS.map((p) => (
-          <button
-            key={p.id}
-            aria-pressed={p.id === curPlan}
-            onClick={() => setCurPlan(p.id)}
-          >
-            {p.name}
-          </button>
-        ))}
+      <label className="plan-select">
+        <span className="lbl">Plan</span>
+        <select value={curPlan} onChange={(e) => setCurPlan(e.target.value)}>
+          {PLANS.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+      </label>
+
+      <div className="pills-wrap pills-desktop">
+        <div className="pills">
+          {PLANS.map((p) => (
+            <button
+              key={p.id}
+              aria-pressed={p.id === curPlan}
+              onClick={() => setCurPlan(p.id)}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+        <div className="nav-fade" aria-hidden="true" />
       </div>
       <div className="box">
         <div className="plan-head">
