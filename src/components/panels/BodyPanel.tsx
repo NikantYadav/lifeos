@@ -2,39 +2,43 @@
 
 import { useState } from 'react';
 import { DAYNAMES, SPLIT } from '@/lib/data';
-import { AppState } from '@/lib/types';
+import { AppState, newId } from '@/lib/types';
 
 export default function BodyPanel({
   state,
   update,
+  todayKey,
   today,
 }: {
   state: AppState;
   update: (fn: (draft: AppState) => void) => void;
+  todayKey: string;
   today: Date;
 }) {
   const [kg, setKg] = useState('');
-  const todayKey = today.toISOString().slice(0, 10);
   const todayAbbrev = DAYNAMES[today.getDay()].slice(0, 3);
 
   const add = () => {
     const v = parseFloat(kg);
-    if (!v) return;
+    if (!Number.isFinite(v) || v <= 0 || v > 500) return;
     update((draft) => {
-      draft.weights.push({ id: Date.now(), date: todayKey, kg: v });
-      draft.weights.sort((a, b) => (a.date < b.date ? -1 : 1));
+      draft.weights.push({ id: newId(), date: todayKey, kg: v });
+      draft.weights.sort((a, b) => (a.date === b.date ? a.id.localeCompare(b.id) : a.date < b.date ? -1 : 1));
+      // Pin the baseline on the first ever weigh-in so the Change column stays
+      // anchored even if that row is later deleted.
+      if (draft.baselineKg === undefined) draft.baselineKg = v;
     });
     setKg('');
   };
 
-  const remove = (id: number) => {
+  const remove = (id: string) => {
     update((draft) => {
       draft.weights = draft.weights.filter((w) => w.id !== id);
     });
   };
 
   const weights = state.weights;
-  const first = weights[0]?.kg;
+  const baseline = state.baselineKg ?? weights[0]?.kg;
   const list = [...weights].reverse();
 
   return (
@@ -59,7 +63,18 @@ export default function BodyPanel({
         <div className="form">
           <div>
             <label className="lbl" htmlFor="wKg">Weight (kg)</label>
-            <input id="wKg" type="number" step="0.1" placeholder="80.0" value={kg} onChange={(e) => setKg(e.target.value)} />
+            <input
+              id="wKg"
+              type="number"
+              step="0.1"
+              inputMode="decimal"
+              placeholder="80.0"
+              value={kg}
+              onChange={(e) => setKg(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') add();
+              }}
+            />
           </div>
           <div>
             <button className="btn" onClick={add}>Record</button>
@@ -74,24 +89,26 @@ export default function BodyPanel({
         {weights.length === 0 ? (
           <div className="empty">No weigh-ins. Record today&apos;s as your baseline.</div>
         ) : (
-          <table>
-            <thead>
-              <tr><th>Date</th><th>Weight</th><th>Change</th><th></th></tr>
-            </thead>
-            <tbody>
-              {list.map((r) => {
-                const d = r.kg - first;
-                return (
-                  <tr key={r.id}>
-                    <td>{r.date}</td>
-                    <td>{r.kg.toFixed(1)} kg</td>
-                    <td>{(d >= 0 ? '+' : '') + d.toFixed(1)} kg</td>
-                    <td><button className="x" onClick={() => remove(r.id)}>×</button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Weight</th><th>Change</th><th></th></tr>
+              </thead>
+              <tbody>
+                {list.map((r) => {
+                  const d = baseline === undefined ? 0 : r.kg - baseline;
+                  return (
+                    <tr key={r.id}>
+                      <td>{r.date}</td>
+                      <td>{r.kg.toFixed(1)} kg</td>
+                      <td>{(d >= 0 ? '+' : '') + d.toFixed(1)} kg</td>
+                      <td><button className="x" aria-label={`Remove weigh-in from ${r.date}`} onClick={() => remove(r.id)}>×</button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </section>

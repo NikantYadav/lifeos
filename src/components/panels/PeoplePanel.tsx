@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { STAGES } from '@/lib/data';
-import { AppState, Person } from '@/lib/types';
+import { daysBetween, fromIso } from '@/lib/dates';
+import { bumpStage as bumpStageMut, dropStage as dropStageMut, markContacted as markContactedMut, STALE_DAYS } from '@/lib/people';
+import { AppState, newId, Person } from '@/lib/types';
 
 export default function PeoplePanel({
   state,
@@ -23,30 +25,17 @@ export default function PeoplePanel({
     const n = name.trim();
     if (!n) return;
     update((draft) => {
-      draft.people.push({ id: Date.now(), name: n, where: where.trim(), stage, last: todayKey });
+      draft.people.push({ id: newId(), name: n, where: where.trim(), stage, last: todayKey });
     });
     setName('');
     setWhere('');
   };
 
-  const bumpStage = (id: number) => {
-    update((draft) => {
-      const p = draft.people.find((x) => x.id === id);
-      if (p) {
-        p.stage = Math.min(4, p.stage + 1) as Person['stage'];
-        p.last = todayKey;
-      }
-    });
-  };
+  const bumpStage = (id: string) => update((draft) => bumpStageMut(draft, id, todayKey));
+  const dropStage = (id: string) => update((draft) => dropStageMut(draft, id));
+  const markContacted = (id: string) => update((draft) => markContactedMut(draft, id, todayKey));
 
-  const markContacted = (id: number) => {
-    update((draft) => {
-      const p = draft.people.find((x) => x.id === id);
-      if (p) p.last = todayKey;
-    });
-  };
-
-  const remove = (id: number) => {
+  const remove = (id: string) => {
     update((draft) => {
       draft.people = draft.people.filter((x) => x.id !== id);
     });
@@ -97,21 +86,32 @@ export default function PeoplePanel({
             </thead>
             <tbody>
               {sorted.map((p) => {
-                const days = Math.floor((today.getTime() - new Date(p.last + 'T00:00:00').getTime()) / 864e5);
+                const days = p.last ? daysBetween(fromIso(p.last), today) : null;
                 return (
                   <tr key={p.id}>
                     <td>{p.name}</td>
                     <td>{p.where || '—'}</td>
                     <td>
                       <span className={'stage ' + STAGES[p.stage][1]}>{STAGES[p.stage][0]}</span>
-                      <button className="x" title="Move down the funnel" onClick={() => bumpStage(p.id)}>↑</button>
+                      {p.stage > 1 && (
+                        <button className="x" title="Move down the funnel" aria-label={`Move ${p.name} down the funnel`} onClick={() => dropStage(p.id)}>↓</button>
+                      )}
+                      {p.stage < 4 && (
+                        <button className="x" title="Move up the funnel" aria-label={`Move ${p.name} up the funnel`} onClick={() => bumpStage(p.id)}>↑</button>
+                      )}
                     </td>
                     <td>
-                      {days >= 14 ? <span className="stale">{days} days — reach out</span> : `${days} days`}
-                      <button className="x" title="Contacted today" onClick={() => markContacted(p.id)}>•</button>
+                      {days === null ? (
+                        '—'
+                      ) : days >= STALE_DAYS ? (
+                        <span className="stale">{days} days — reach out</span>
+                      ) : (
+                        `${days} days`
+                      )}
+                      <button className="x" title="Contacted today" aria-label={`Mark ${p.name} contacted today`} onClick={() => markContacted(p.id)}>•</button>
                     </td>
                     <td>
-                      <button className="x" onClick={() => remove(p.id)}>×</button>
+                      <button className="x" aria-label={`Remove ${p.name}`} onClick={() => remove(p.id)}>×</button>
                     </td>
                   </tr>
                 );

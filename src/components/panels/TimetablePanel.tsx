@@ -1,12 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { WEEK } from '@/lib/data';
+import { currentSchedIndex } from '@/lib/dates';
+import { WeekSchedule } from '@/lib/types';
 import SchedList from '../SchedList';
 
 const ORDER = [1, 2, 3, 4, 5, 6, 0];
 
-export default function TimetablePanel({ dayOfWeek }: { dayOfWeek: number }) {
+export default function TimetablePanel({
+  schedule,
+  dayOfWeek,
+  now,
+}: {
+  schedule: WeekSchedule;
+  dayOfWeek: number;
+  now: Date | null;
+}) {
   const [openDay, setOpenDay] = useState(dayOfWeek);
 
   return (
@@ -14,8 +23,8 @@ export default function TimetablePanel({ dayOfWeek }: { dayOfWeek: number }) {
       <h2>The whole week</h2>
       <p className="note">Every block has a place. If a block has no place, it will not happen.</p>
       <div className="accordion">
-        {ORDER.map((d) => {
-          const [label, rows] = WEEK[d];
+        {ORDER.filter((d) => schedule[d]).map((d) => {
+          const [label, rows] = schedule[d];
           const open = openDay === d;
           return (
             <div className={'acc-item' + (open ? ' open' : '')} key={d}>
@@ -27,7 +36,11 @@ export default function TimetablePanel({ dayOfWeek }: { dayOfWeek: number }) {
               </button>
               {open && (
                 <div className="box acc-body">
-                  <SchedList rows={rows} noKey={d !== dayOfWeek} />
+                  <SchedList
+                    rows={rows}
+                    noKey={d !== dayOfWeek}
+                    nowIndex={d === dayOfWeek && now ? currentSchedIndex(rows, now) : undefined}
+                  />
                 </div>
               )}
             </div>

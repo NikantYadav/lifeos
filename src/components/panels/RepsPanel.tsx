@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { OUTCOMES } from '@/lib/data';
-import { AppState, ApproachOutcome } from '@/lib/types';
+import { AppState, ApproachOutcome, newId } from '@/lib/types';
 
 export default function RepsPanel({
   state,
@@ -23,7 +23,7 @@ export default function RepsPanel({
     const op = opener.trim();
     if (!wh && !op) return;
     update((draft) => {
-      draft.approaches.push({ id: Date.now(), date: todayKey, where: wh, opener: op, out, lesson: lesson.trim() });
+      draft.approaches.push({ id: newId(), date: todayKey, where: wh, opener: op, out, lesson: lesson.trim() });
       const d = draft.days[todayKey] ?? { c: {}, n: {} };
       d.n = { ...d.n, approaches: (d.n.approaches || 0) + 1 };
       draft.days[todayKey] = d;
@@ -33,7 +33,7 @@ export default function RepsPanel({
     setLesson('');
   };
 
-  const remove = (id: number) => {
+  const remove = (id: string) => {
     update((draft) => {
       draft.approaches = draft.approaches.filter((a) => a.id !== id);
     });
@@ -95,7 +95,7 @@ export default function RepsPanel({
                   <td>{a.opener || '—'}</td>
                   <td><span className={'stage ' + OUTCOMES[a.out][1]}>{OUTCOMES[a.out][0]}</span></td>
                   <td>{a.lesson || '—'}</td>
-                  <td><button className="x" onClick={() => remove(a.id)}>×</button></td>
+                  <td><button className="x" aria-label="Remove entry" onClick={() => remove(a.id)}>×</button></td>
                 </tr>
               ))}
             </tbody>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export type Tab =
   | 'today' | 'timetable' | 'plans' | 'week' | 'people'
@@ -18,6 +18,9 @@ const ALL_TABS: [Tab, string][] = [
 ];
 
 const PRIMARY: Tab[] = ['today', 'timetable', 'plans', 'people'];
+
+export const tabId = (t: Tab) => `tab-${t}`;
+export const panelId = (t: Tab) => `panel-${t}`;
 
 const ICONS: Record<Tab, React.ReactNode> = {
   today: (
@@ -79,6 +82,10 @@ const MORE_ICON = (
 
 export default function Nav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const moreBtnRef = useRef<HTMLButtonElement>(null);
+
   const moreTabs = ALL_TABS.filter(([id]) => !PRIMARY.includes(id));
   const moreActive = moreTabs.some(([id]) => id === active);
 
@@ -87,32 +94,84 @@ export default function Nav({ active, onChange }: { active: Tab; onChange: (t: T
     setMoreOpen(false);
   };
 
+  // Roving arrow-key navigation across the desktop tablist, per the WAI-ARIA
+  // tabs pattern.
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+    if (!keys.includes(e.key)) return;
+    e.preventDefault();
+    const i = ALL_TABS.findIndex(([id]) => id === active);
+    const last = ALL_TABS.length - 1;
+    const next =
+      e.key === 'ArrowLeft' ? (i <= 0 ? last : i - 1)
+      : e.key === 'ArrowRight' ? (i >= last ? 0 : i + 1)
+      : e.key === 'Home' ? 0
+      : last;
+    const [id] = ALL_TABS[next];
+    onChange(id);
+    listRef.current?.querySelector<HTMLButtonElement>(`#${tabId(id)}`)?.focus();
+  };
+
+  // Close the sheet on Escape and return focus to the button that opened it.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMoreOpen(false);
+        moreBtnRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    sheetRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    return () => document.removeEventListener('keydown', onKey);
+  }, [moreOpen]);
+
   return (
     <>
       {/* Desktop / wide: horizontal tab bar */}
       <div className="nav-wrap nav-desktop">
-        <nav role="tablist">
+        <div role="tablist" aria-label="Sections" ref={listRef} onKeyDown={onKeyDown}>
           {ALL_TABS.map(([id, label]) => (
-            <button key={id} role="tab" aria-selected={active === id} onClick={() => onChange(id)}>
+            <button
+              key={id}
+              id={tabId(id)}
+              role="tab"
+              aria-selected={active === id}
+              aria-controls={panelId(id)}
+              tabIndex={active === id ? 0 : -1}
+              onClick={() => onChange(id)}
+            >
               {label}
             </button>
           ))}
-        </nav>
+        </div>
         <div className="nav-fade" aria-hidden="true" />
       </div>
 
       {/* Mobile: fixed bottom tab bar */}
-      <nav className="tabbar" role="tablist" aria-label="Main">
+      <nav className="tabbar" aria-label="Main">
         {PRIMARY.map((id) => {
           const label = ALL_TABS.find(([tid]) => tid === id)![1];
           return (
-            <button key={id} role="tab" aria-selected={active === id} onClick={() => go(id)}>
+            <button
+              key={id}
+              aria-current={active === id ? 'page' : undefined}
+              className={active === id ? 'on' : undefined}
+              onClick={() => go(id)}
+            >
               <span className="ic">{ICONS[id]}</span>
               {label}
             </button>
           );
         })}
-        <button role="tab" aria-selected={moreActive} aria-haspopup="true" aria-expanded={moreOpen} onClick={() => setMoreOpen(true)}>
+        <button
+          ref={moreBtnRef}
+          className={moreActive ? 'on' : undefined}
+          aria-current={moreActive ? 'page' : undefined}
+          aria-haspopup="dialog"
+          aria-expanded={moreOpen}
+          onClick={() => setMoreOpen(true)}
+        >
           <span className="ic">{MORE_ICON}</span>
           More
         </button>
@@ -120,10 +179,22 @@ export default function Nav({ active, onChange }: { active: Tab; onChange: (t: T
 
       {moreOpen && (
         <div className="sheet-backdrop" onClick={() => setMoreOpen(false)}>
-          <div className="sheet" role="dialog" aria-modal="true" aria-label="More tabs" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="More sections"
+            ref={sheetRef}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="sheet-handle" />
             {moreTabs.map(([id, label]) => (
-              <button key={id} className={'sheet-item' + (active === id ? ' on' : '')} onClick={() => go(id)}>
+              <button
+                key={id}
+                className={'sheet-item' + (active === id ? ' on' : '')}
+                aria-current={active === id ? 'page' : undefined}
+                onClick={() => go(id)}
+              >
                 <span className="ic">{ICONS[id]}</span>
                 {label}
               </button>

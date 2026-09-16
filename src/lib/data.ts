@@ -1,101 +1,107 @@
+import { Habit, Plan, Task, WeekSchedule } from './types';
+
 export const START = new Date(2026, 8, 15);
 export const END = new Date(2027, 2, 1);
 export const DAYNAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export type SchedRow = [string, string, string, number?];
-
-export const WEEK: Record<number, [string, SchedRow[]]> = {
+/**
+ * Everything below prefixed SEED_ is a one-time default, copied into AppState
+ * by migrateState() on first load and then owned by the saved state — these
+ * exports must never be imported by anything that reads "live" data (panels
+ * read state.plans/state.schedule/etc., not these).
+ */
+export const SEED_SCHEDULE: WeekSchedule = {
   1: ['Monday — office. Chest, shoulders, triceps.', [
     ['07:30', 'Wake', 'Phone stays across the room'],
     ['07:45', 'Walk', 'Same route, same juice stall, same time.'],
     ['08:15', 'Breakfast, 6 eggs, shower', ''],
-    ['08:45', 'Startup — 1.5h', 'Your room, your monitor, phone in a drawer', 1],
-    ['10:15', 'Bus to Kadubeesanahalli', 'Read on the bus'],
+    ['08:45', 'Startup — 1.5h', 'Your room, your monitor, phone in a drawer', 1, 'startup'],
+    ['10:15', 'Bus to Kadubeesanahalli', 'Read on the bus', undefined, 'read'],
     ['11:00', 'Job work + lunch', ''],
-    ['15:30', 'Gym — 90 min', 'Fresh t-shirt after. Shower at home.', 1],
+    ['15:30', 'Gym — 90 min', 'Fresh t-shirt after. Shower at home.', 1, 'gym'],
     ['17:00', 'Bus home', ''],
     ['17:50', 'Shower, protein', ''],
-    ['18:30', 'Your café — 2h', "Same table, same time. Read + 2 conversations + 1 approach. Learn the staff's names.", 1],
+    ['18:30', 'Your café — 2h', "Same table, same time. Read + 2 conversations + 1 approach. Learn the staff's names.", 1, 'places'],
     ['20:30', 'Dinner', ''],
-    ['21:30', 'Russian — 20 min', ''],
-    ['22:30', 'Read', ''],
+    ['21:30', 'Russian — 20 min', '', undefined, 'russian'],
+    ['22:30', 'Read', '', undefined, 'read'],
     ['23:00', 'Sleep', ''],
   ]],
   2: ['Tuesday — WFH + gym trip. Legs, quads.', [
     ['07:45', 'Wake', ''],
     ['08:00', 'Walk', ''],
-    ['08:30', 'Startup — 3h', 'Best block of your week', 1],
+    ['08:30', 'Startup — 3h', 'Best block of your week', 1, 'startup'],
     ['11:30', 'Food, job work at PG', ''],
     ['13:00', 'Bus to office', 'Off-peak. 20–25 min instead of 45.'],
     ['13:45', 'Job work at office', ''],
-    ['15:15', 'Gym — 90 min', '', 1],
+    ['15:15', 'Gym — 90 min', '', 1, 'gym'],
     ['16:50', 'Bus home', ''],
     ['17:20', 'Shower, protein', ''],
-    ['18:30', 'Badminton — 90 min', 'Machaxi Scooled, AECS Layout. Solo slot on Playo. Same slot every week.', 1],
-    ['20:00', 'Stay back 20 min', 'Never leave straight after. This is where the group chat comes from.', 1],
+    ['18:30', 'Badminton — 90 min', 'Machaxi Scooled, AECS Layout. Solo slot on Playo. Same slot every week.', 1, 'social'],
+    ['20:00', 'Stay back 20 min', 'Never leave straight after. This is where the group chat comes from.', 1, 'social'],
     ['20:30', 'Dinner', ''],
-    ['21:30', 'DJ — 45 min', ''],
+    ['21:30', 'DJ — 45 min', '', undefined, 'dj'],
     ['23:00', 'Sleep', ''],
   ]],
   3: ['Wednesday — WFH + gym trip. Back and biceps.', [
     ['07:45', 'Wake', ''],
     ['08:00', 'Walk', ''],
-    ['08:30', 'Startup — 3h', '', 1],
+    ['08:30', 'Startup — 3h', '', 1, 'startup'],
     ['11:30', 'Food, job work at PG', ''],
     ['13:00', 'Bus to office', ''],
     ['13:45', 'Job work at office', ''],
-    ['15:15', 'Gym — 90 min', '', 1],
+    ['15:15', 'Gym — 90 min', '', 1, 'gym'],
     ['16:50', 'Bus home', ''],
     ['17:20', 'Shower', ''],
-    ['18:00', 'DJ — 1h', ''],
-    ['19:00', 'Write one story', 'Rework one thing that happened to you into 90 seconds', 1],
+    ['18:00', 'DJ — 1h', '', undefined, 'dj'],
+    ['19:00', 'Write one story', 'Rework one thing that happened to you into 90 seconds', 1, 'speak'],
     ['19:30', 'Dinner', ''],
-    ['20:30', 'Russian, reading', 'Your one full rest evening. Stay in.', 1],
+    ['20:30', 'Russian, reading', 'Your one full rest evening. Stay in.', 1, 'russian'],
     ['23:00', 'Sleep', ''],
   ]],
   4: ['Thursday — office. Hamstrings, glutes, core.', [
     ['07:30', 'Wake', ''],
     ['07:45', 'Walk', ''],
-    ['08:45', 'Startup — 1.5h', '', 1],
+    ['08:45', 'Startup — 1.5h', '', 1, 'startup'],
     ['10:15', 'Bus to office', ''],
     ['11:00', 'Job work + lunch', ''],
-    ['15:30', 'Gym — 90 min', '', 1],
+    ['15:30', 'Gym — 90 min', '', 1, 'gym'],
     ['17:00', 'Bus home', ''],
     ['17:50', 'Shower, protein', ''],
-    ['18:30', 'New room — 2h', 'Second Playo slot, a Zone A meetup, or a new café on a quiet night so you can talk to the staff.', 1],
+    ['18:30', 'New room — 2h', 'Second Playo slot, a Zone A meetup, or a new café on a quiet night so you can talk to the staff.', 1, 'places'],
     ['20:30', 'Dinner', ''],
-    ['21:30', 'Russian', ''],
+    ['21:30', 'Russian', '', undefined, 'russian'],
     ['23:00', 'Sleep', ''],
   ]],
   5: ['Friday — office. Shoulders, arms, posture.', [
     ['07:30', 'Wake', ''],
     ['07:45', 'Walk', ''],
-    ['08:45', 'Startup — 1.5h', '', 1],
+    ['08:45', 'Startup — 1.5h', '', 1, 'startup'],
     ['10:15', 'Bus to office', ''],
     ['11:00', 'Job work + lunch', ''],
-    ['15:30', 'Gym — 90 min', '', 1],
+    ['15:30', 'Gym — 90 min', '', 1, 'gym'],
     ['17:00', 'Bus home', ''],
     ['17:50', 'Shower, best outfit of the week', ''],
-    ['20:00', 'Out', 'You make the plan and you make the group chat, even if it is four people. Take photos of everyone.', 1],
+    ['20:00', 'Out', 'You make the plan and you make the group chat, even if it is four people. Take photos of everyone.', 1, 'social'],
     ['02:00', 'Home', ''],
   ]],
   6: ['Saturday.', [
     ['09:30', 'Wake', 'You were out. No early run.'],
     ['11:00', 'Free — 4h', 'Errands, reading, whatever the week did not leave room for.', 1],
     ['15:00', 'Lunch somewhere new', 'Bring the book if you are solo'],
-    ['16:00', 'Swimming — 90 min', 'Machaxi Nadando, Varthur. From week 5.', 1],
-    ['19:00', 'Social', "Your group, someone's place, a Koramangala startup thing twice a month", 1],
+    ['16:00', 'Swimming — 90 min', 'Machaxi Nadando, Varthur. From week 5.', 1, 'swim'],
+    ['19:00', 'Social', "Your group, someone's place, a Koramangala startup thing twice a month", 1, 'social'],
     ['23:30', 'Home', ''],
   ]],
   0: ['Sunday — run, rest, plan.', [
     ['07:00', 'Wake', ''],
-    ['07:30', 'Run club — 5K', 'Whitefield Run Club. RSVP the night before.', 1],
-    ['08:45', 'Coffee after the run', 'Never run and leave. 2 conversations + 1 approach. Find the organiser and talk to them.', 1],
-    ['10:00', 'Groceries', '2 trays eggs, whey, curd, peanut butter, oats, bananas'],
+    ['07:30', 'Run club — 5K', 'Whitefield Run Club. RSVP the night before.', 1, 'places'],
+    ['08:45', 'Coffee after the run', 'Never run and leave. 2 conversations + 1 approach. Find the organiser and talk to them.', 1, 'places'],
+    ['10:00', 'Groceries', '2 trays eggs, whey, curd, peanut butter, oats, bananas', undefined, 'food'],
     ['11:00', 'Laundry, admin', ''],
     ['12:00', 'Nothing', 'Prescribed. Movie, nap, scroll if you want.', 1],
-    ['17:00', 'Startup — 3h', '', 1],
-    ['20:00', 'Book next week', 'Playo slots, run club RSVP, one invite sent', 1],
+    ['17:00', 'Startup — 3h', '', 1, 'startup'],
+    ['20:00', 'Book next week', 'Playo slots, run club RSVP, one invite sent', 1, 'social'],
     ['21:00', 'Dinner, read', ''],
   ]],
 };
@@ -108,22 +114,7 @@ export const SPLIT: [string, string, string][] = [
   ['Fri', 'Shoulders, arms, posture', 'Overhead press 4×6–10 · Lateral raise 4×12–20 · Rear delt fly 3×15–20 · Curls + triceps 3 each · Band pull-aparts 3×20'],
 ];
 
-export interface Plan {
-  id: string;
-  name: string;
-  aim: string;
-  when?: string[];
-  where?: string[];
-  how?: string[];
-  quota?: string[];
-  good?: string;
-  bad?: string;
-  warn?: string;
-  ask?: string[];
-  milestones?: [number, string][];
-}
-
-export const PLANS: Plan[] = [
+export const SEED_PLANS: Plan[] = [
   { id: 'principles', name: 'Principles', aim: 'The handful of ideas everything else runs on. Read this one first.',
     how: ['<b>Proximity plus repetition makes friends.</b> Not chemistry, not effort. It is why you had 10 friends in college and none here. So the whole plan is built on seeing the same people at the same place at the same time every week — the gym, the juice stall, the Tuesday court, the Sunday run.',
       '<b>Leisure routine.</b> Do not schedule "friend time". Build your fun into your routine so you see people while doing things you wanted to do anyway. Every activity should do two jobs at once — badminton is exercise and friends, run club is cardio and friends, the café is reading and approaching.',
@@ -234,7 +225,7 @@ export const PLANS: Plan[] = [
     milestones: [[5, 'Search started'], [11, 'Moved in'], [24, '~₹2.35 lakh saved']] },
 ];
 
-export const CHECKS: [string, string, string][] = [
+export const SEED_CHECKS: [string, string, string][] = [
   ['gym', 'Gym done', 'Mon–Fri'],
   ['startup', 'Startup block done', 'Before 11am'],
   ['protein', '150g+ protein', ''],
@@ -245,15 +236,37 @@ export const CHECKS: [string, string, string][] = [
   ['skin', 'Skin routine, AM + PM', ''],
 ];
 
-export const COUNTS: [string, string][] = [
+export const SEED_COUNTS: [string, string][] = [
   ['convos', 'Conversations'], ['approaches', 'Approaches'], ['ig', 'Instagram exchanges'],
   ['invites', 'Invites sent'], ['followups', 'Follow-ups'], ['pages', 'Pages read'], ['hours', 'Startup hours'],
 ];
 
-export const WEEK_GOALS: Record<string, number> = {
+export const SEED_WEEK_GOALS: Record<string, number> = {
   convos: 5, approaches: 3, ig: 2, invites: 1, followups: 1, pages: 200, hours: 13,
   gym: 5, out: 5, protein: 6,
 };
+
+/** Materialized into AppState.tasks by migrateState() on first load. */
+export const SEED_TASKS: Omit<Task, 'id' | 'createdAt' | 'status'>[] = [
+  { title: 'Book the dermatologist', detail: 'Any dermatology clinic in Marathahalli or Whitefield. ₹700–1,500.', planId: 'skin', triggerWeek: 0 },
+  { title: 'Book four Tuesday Playo slots', detail: 'Same badminton slot, four weeks running — same regulars come back.', planId: 'social', triggerWeek: 0 },
+  { title: 'Pick your café', detail: 'One café in Marathahalli or Brookefield. Go every Monday from here on.', planId: 'places', triggerWeek: 0 },
+  { title: 'Start the Bangalore guide', detail: 'A Google Maps list of your actual favourite spots — ongoing, add to it as you go.', planId: 'places', triggerWeek: 0 },
+  { title: 'Baseline photos and weight', detail: 'Your before. It will be bad — that is the point. Gets you on the apps now.', planId: 'dating', triggerWeek: 1 },
+  { title: 'Start the flat search', detail: 'Zone A and toward Kadubeesanahalli — Marathahalli, AECS Layout, Munnekolala, Doddanekkundi, Kundalahalli.', planId: 'money', triggerWeek: 4 },
+  { title: 'Book a swimming batch', detail: 'Coached adult beginner batch, not open swim. Machaxi Nadando, Varthur or a backup.', planId: 'swim', triggerWeek: 4 },
+  { title: 'Build the style reference board', detail: 'Save 50 outfits you like, on tall lean men. Look for what repeats.', planId: 'style', triggerWeek: 4 },
+  { title: 'Take five items to a tailor', detail: 'Five tailored items beat ten new ones, for about ₹1,500.', planId: 'style', triggerWeek: 6 },
+  { title: 'Shoot the real photo set', detail: '200 shots, keep six — clear face, full body, doing something, with friends, a place with character, personality.', planId: 'dating', triggerWeek: 18 },
+];
+
+/** Materialized into AppState.habits by migrateState() on first load. */
+export const SEED_HABITS: Omit<Habit, 'id' | 'createdAt'>[] = [
+  { title: 'Photo drill — 10 min', planId: 'dating', cadence: { kind: 'weeklyOnDays', days: [1, 4] } },
+  { title: 'Self-timer set — 30 shots', planId: 'dating', cadence: { kind: 'everyNWeeks', n: 4 } },
+  { title: 'Barber', planId: 'style', cadence: { kind: 'everyNDays', n: 21 } },
+  { title: 'Monthly startup review', planId: 'startup', cadence: { kind: 'everyNWeeks', n: 4 } },
+];
 
 export const PHASES: [number, number, string, string[]][] = [
   [0, 1, "Weeks 1–2 · Get the frame up", [

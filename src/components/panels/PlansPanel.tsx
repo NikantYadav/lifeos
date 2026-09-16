@@ -1,47 +1,53 @@
 'use client';
 
 import { useState } from 'react';
-import { PLANS } from '@/lib/data';
+import { renderBold } from '@/lib/markup';
+import { Plan } from '@/lib/types';
 
-function HtmlList({ items }: { items: string[] }) {
+function BoldList({ items }: { items: string[] }) {
   return (
     <ul>
       {items.map((item, i) => (
-        <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
+        <li key={i}>{renderBold(item)}</li>
       ))}
     </ul>
   );
 }
 
-export default function PlansPanel() {
-  const [curPlan, setCurPlan] = useState(PLANS[0].id);
-  const plan = PLANS.find((p) => p.id === curPlan)!;
+export default function PlansPanel({ plans }: { plans: Plan[] }) {
+  const [curPlan, setCurPlan] = useState<string | null>(null);
+  const plan = plans.find((p) => p.id === curPlan) ?? null;
 
-  return (
-    <section className="panel">
-      <label className="plan-select">
-        <span className="lbl">Plan</span>
-        <select value={curPlan} onChange={(e) => setCurPlan(e.target.value)}>
-          {PLANS.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-      </label>
-
-      <div className="pills-wrap pills-desktop">
-        <div className="pills">
-          {PLANS.map((p) => (
-            <button
-              key={p.id}
-              aria-pressed={p.id === curPlan}
-              onClick={() => setCurPlan(p.id)}
-            >
-              {p.name}
+  if (!plan) {
+    return (
+      <section className="panel">
+        <h2>All plans</h2>
+        <div className="box plan-list">
+          {plans.map((p) => (
+            <button key={p.id} className="plan-row" onClick={() => setCurPlan(p.id)}>
+              <span className="plan-row-text">
+                <b>{p.name}</b>
+                <span className="plan-row-aim">{p.aim}</span>
+              </span>
+              <svg className="chev right" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
             </button>
           ))}
         </div>
-        <div className="nav-fade" aria-hidden="true" />
-      </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="panel">
+      <button className="plan-back" onClick={() => setCurPlan(null)}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
+        All plans
+      </button>
+
       <div className="box">
         <div className="plan-head">
           <b>{plan.name}</b>
@@ -51,25 +57,25 @@ export default function PlansPanel() {
         {plan.when && (
           <div className="field">
             <div className="k">When</div>
-            <div className="v"><HtmlList items={plan.when} /></div>
+            <div className="v"><BoldList items={plan.when} /></div>
           </div>
         )}
         {plan.where && (
           <div className="field">
             <div className="k">Where</div>
-            <div className="v"><HtmlList items={plan.where} /></div>
+            <div className="v"><BoldList items={plan.where} /></div>
           </div>
         )}
         {plan.how && (
           <div className="field">
             <div className="k">How</div>
-            <div className="v"><HtmlList items={plan.how} /></div>
+            <div className="v"><BoldList items={plan.how} /></div>
           </div>
         )}
         {plan.quota && (
           <div className="field">
             <div className="k">Weekly quota</div>
-            <div className="v"><HtmlList items={plan.quota} /></div>
+            <div className="v"><BoldList items={plan.quota} /></div>
           </div>
         )}
         {plan.good && (
@@ -93,7 +99,7 @@ export default function PlansPanel() {
         {plan.ask && (
           <div className="field">
             <div className="k">Ask the doctor</div>
-            <div className="v"><HtmlList items={plan.ask} /></div>
+            <div className="v"><BoldList items={plan.ask} /></div>
           </div>
         )}
         {plan.milestones && (

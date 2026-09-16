@@ -1,0 +1,19 @@
+{
+  "name": "Life OS",
+  "short_name": "Life OS",
+  "description": "A six-month personal operating plan and daily tracker.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#E7ECEF",
+  "theme_color": "#E7ECEF",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

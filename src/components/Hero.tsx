@@ -1,38 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { END, WEEK_GOALS, COUNTS } from '@/lib/data';
-import { weekDates } from '@/lib/dates';
+import { END } from '@/lib/data';
+import { daysBetween, TOTAL_WEEKS } from '@/lib/dates';
+import { weekScore } from '@/lib/score';
 import { AppState } from '@/lib/types';
 
-function weekTotals(state: AppState, wi: number) {
-  const t: Record<string, number> = {};
-  Object.keys(WEEK_GOALS).forEach((k) => (t[k] = 0));
-  weekDates(wi).forEach((k) => {
-    const d = state.days[k];
-    if (!d) return;
-    COUNTS.forEach(([ck]) => (t[ck] = (t[ck] || 0) + ((d.n && d.n[ck]) || 0)));
-    if (d.c) {
-      if (d.c.gym) t.gym++;
-      if (d.c.out) t.out++;
-      if (d.c.protein) t.protein++;
-    }
-  });
-  return t;
-}
-
-export function weekScore(state: AppState, wi: number) {
-  const t = weekTotals(state, wi);
-  let s = 0;
-  let n = 0;
-  for (const k in WEEK_GOALS) {
-    n++;
-    s += Math.min(1, (t[k] || 0) / WEEK_GOALS[k]);
-  }
-  return s / n;
-}
-
-export default function Hero({ state, today, curWeek }: { state: AppState; today: Date; curWeek: number }) {
-  const daysLeft = Math.max(0, Math.ceil((END.getTime() - today.getTime()) / 864e5));
-  const scrollRef = useRef<HTMLDivElement>(null);
+export default function Hero({
+  state,
+  today,
+  curWeek,
+  ready,
+}: {
+  state: AppState;
+  today: Date;
+  curWeek: number;
+  ready: boolean;
+}) {
+  const daysLeft = Math.max(0, daysBetween(today, END));
   const nowRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
 
@@ -40,17 +23,17 @@ export default function Hero({ state, today, curWeek }: { state: AppState; today
     if (expanded) nowRef.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
   }, [curWeek, expanded]);
 
-  const pct = Math.round(((curWeek + 1) / 24) * 100);
+  const pct = Math.round(((curWeek + 1) / TOTAL_WEEKS) * 100);
 
   return (
     <header className="hero">
       <div className="hero-top">
         <div className="wk">
-          Week {curWeek + 1}
-          <small> of 24</small>
+          Week {ready ? curWeek + 1 : '—'}
+          <small> of {TOTAL_WEEKS}</small>
         </div>
         <div className="hero-meta">
-          <b>{daysLeft} days</b>until 1 March 2027
+          <b>{ready ? `${daysLeft} days` : ' '}</b>until 1 March 2027
         </div>
       </div>
 
@@ -59,9 +42,11 @@ export default function Hero({ state, today, curWeek }: { state: AppState; today
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
-        <span className="hero-toggle-track"><span className="hero-toggle-fill" style={{ width: pct + '%' }} /></span>
+        <span className="hero-toggle-track">
+          <span className="hero-toggle-fill" style={{ width: (ready ? pct : 0) + '%' }} />
+        </span>
         <span className="hero-toggle-label">
-          {expanded ? 'Hide' : 'Show'} 24-week chart
+          {expanded ? 'Hide' : 'Show'} {TOTAL_WEEKS}-week chart
           <svg className={'chev' + (expanded ? ' up' : '')} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 9l6 6 6-6" />
           </svg>
@@ -71,9 +56,9 @@ export default function Hero({ state, today, curWeek }: { state: AppState; today
       {expanded && (
         <>
           <div className="bars-scroll-wrap">
-            <div className="bars-scroll" ref={scrollRef}>
+            <div className="bars-scroll">
               <div className="bars">
-                {Array.from({ length: 24 }, (_, i) => {
+                {Array.from({ length: TOTAL_WEEKS }, (_, i) => {
                   const cls = 'bar' + (i === curWeek ? ' now' : '') + (i < curWeek ? ' past' : '');
                   const height = i <= curWeek ? Math.round(weekScore(state, i) * 100) : 0;
                   return (

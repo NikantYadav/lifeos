@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useAppState } from '@/lib/useAppState';
+import { useNow } from '@/lib/useNow';
 import { currentWeekIndex, iso } from '@/lib/dates';
 import Hero from '@/components/Hero';
-import Nav, { Tab } from '@/components/Nav';
+import Nav, { panelId, tabId, Tab } from '@/components/Nav';
 import SaveIndicator from '@/components/SaveIndicator';
 import TodayPanel from '@/components/panels/TodayPanel';
 import TimetablePanel from '@/components/panels/TimetablePanel';
@@ -16,33 +17,49 @@ import BodyPanel from '@/components/panels/BodyPanel';
 import PhasesPanel from '@/components/panels/PhasesPanel';
 
 export default function Home() {
-  const { state, update, savedFlash } = useAppState();
+  const { state, update, status } = useAppState();
   const [tab, setTab] = useState<Tab>('today');
 
-  const today = useMemo(() => new Date(), []);
-  const todayKey = useMemo(() => iso(today), [today]);
-  const curWeek = useMemo(() => currentWeekIndex(today), [today]);
+  // Ticks every minute, so an app left open overnight rolls over to the new
+  // day instead of writing to yesterday's key.
+  const now = useNow();
+  const today = now ?? new Date(0);
+  const ready = now !== null;
+
+  const todayKey = iso(today);
+  const curWeek = currentWeekIndex(today);
   const dayOfWeek = today.getDay();
 
   return (
     <div className="wrap">
-      <Hero state={state} today={today} curWeek={curWeek} />
+      <Hero state={state} today={today} curWeek={curWeek} ready={ready} />
       <Nav active={tab} onChange={setTab} />
 
-      {tab === 'today' && (
-        <TodayPanel state={state} update={update} todayKey={todayKey} dayOfWeek={dayOfWeek} />
-      )}
-      {tab === 'timetable' && <TimetablePanel dayOfWeek={dayOfWeek} />}
-      {tab === 'plans' && <PlansPanel />}
-      {tab === 'week' && <WeekPanel state={state} curWeek={curWeek} todayKey={todayKey} />}
-      {tab === 'people' && (
-        <PeoplePanel state={state} update={update} todayKey={todayKey} today={today} />
-      )}
-      {tab === 'reps' && <RepsPanel state={state} update={update} todayKey={todayKey} />}
-      {tab === 'body' && <BodyPanel state={state} update={update} today={today} />}
-      {tab === 'phases' && <PhasesPanel curWeek={curWeek} />}
+      <div id={panelId(tab)} role="tabpanel" aria-labelledby={tabId(tab)} tabIndex={-1}>
+        {tab === 'today' && (
+          <TodayPanel
+            state={state}
+            update={update}
+            todayKey={todayKey}
+            dayOfWeek={dayOfWeek}
+            now={now}
+            curWeek={curWeek}
+          />
+        )}
+        {tab === 'timetable' && <TimetablePanel schedule={state.schedule} dayOfWeek={dayOfWeek} now={now} />}
+        {tab === 'plans' && <PlansPanel plans={state.plans} />}
+        {tab === 'week' && <WeekPanel state={state} curWeek={curWeek} todayKey={todayKey} />}
+        {tab === 'people' && (
+          <PeoplePanel state={state} update={update} todayKey={todayKey} today={today} />
+        )}
+        {tab === 'reps' && <RepsPanel state={state} update={update} todayKey={todayKey} />}
+        {tab === 'body' && (
+          <BodyPanel state={state} update={update} todayKey={todayKey} today={today} />
+        )}
+        {tab === 'phases' && <PhasesPanel curWeek={curWeek} />}
+      </div>
 
-      <SaveIndicator up={savedFlash} />
+      <SaveIndicator status={status} />
     </div>
   );
 }
