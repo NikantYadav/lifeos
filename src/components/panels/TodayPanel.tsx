@@ -135,6 +135,11 @@ export default function TodayPanel({
 
   const activities = buildActivities(rows, state.checks);
   const doneCount = activities.filter((a) => day.c[a.key]).length;
+  // Not-done first, done sunk to the bottom — stable within each group so
+  // the list doesn't reshuffle beyond moving a just-ticked item down.
+  const ordered = [...activities].sort(
+    (a, b) => Number(!!day.c[a.key]) - Number(!!day.c[b.key])
+  );
 
   return (
     <section className="panel">
@@ -143,7 +148,7 @@ export default function TodayPanel({
         <span className="today-count">{doneCount} / {activities.length}</span>
       </div>
       <div className="chk-compact-list">
-        {activities.map(({ key, label: lbl }) => (
+        {ordered.map(({ key, label: lbl }) => (
           <ActivityRow
             key={key}
             checkKey={key}

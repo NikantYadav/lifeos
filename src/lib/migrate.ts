@@ -10,7 +10,7 @@ import {
 import { AppState, newId } from './types';
 
 /** Bump when the seed shape in data.ts changes, to re-run migration once more. */
-export const CURRENT_SEED_VERSION = 3;
+export const CURRENT_SEED_VERSION = 4;
 
 /**
  * Titles removed from SEED_TASKS/SEED_HABITS after some deployments had
@@ -62,6 +62,27 @@ export function migrateState(state: AppState): AppState {
     seeded.tasks = seeded.tasks.filter(
       (t) => !(t.status === 'pending' && REMOVED_TASK_TITLES_V3.has(t.title))
     );
+  }
+
+  /**
+   * The "fill only if empty" seeding above only ever reaches a state whose
+   * plans/schedule were still empty. Anyone already past first load has a
+   * schedule/plans list from the *original* seed baked into their saved
+   * state, and this app's authored content (gym split, nightly blocks, plan
+   * copy) has since changed — those users would otherwise never see it.
+   *
+   * The schedule is a content rewrite, not user-entered data (the app has no
+   * schedule editor), so it's replaced outright. Plans ARE occasionally
+   * user/AI-edited in place via the Sunday review diff flow, so those are
+   * merged by id instead — existing plan objects are left exactly as they
+   * are (preserving any applied review edits), and only plan ids missing
+   * from the user's list (e.g. the new 'sexual-health' plan) are added.
+   */
+  if (state.seedVersion < 4) {
+    seeded.schedule = structuredClone(SEED_SCHEDULE);
+    const existingPlanIds = new Set(seeded.plans.map((p) => p.id));
+    const newPlans = SEED_PLANS.filter((p) => !existingPlanIds.has(p.id));
+    if (newPlans.length) seeded.plans = [...seeded.plans, ...structuredClone(newPlans)];
   }
 
   return seeded;

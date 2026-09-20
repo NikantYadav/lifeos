@@ -170,22 +170,22 @@ h2:first-child { margin-top: 0; }
 
 /* Today's activities — dense single-line rows so a full day's list fits
    without excess scrolling, especially on a phone. */
-.today-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-.today-count { font-size: 12.5px; font-weight: 700; color: var(--soft); }
-.chk-compact-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--card); }
-.chk-compact { display: flex; align-items: center; border-bottom: 1px solid var(--grid); }
+.today-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.today-count { font-size: 12px; font-weight: 700; color: var(--soft); }
+.chk-compact-list { display: flex; flex-direction: column; margin-bottom: 16px; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--card); }
+.chk-compact { display: flex; align-items: center; border-bottom: 1px solid var(--grid); transition: opacity .15s ease; }
 .chk-compact:last-child { border-bottom: none; }
-.chk-compact-btn { flex: 1; display: flex; align-items: center; gap: 9px; background: none; border: none; padding: 9px 12px; font-weight: 600; font-size: 13.5px; text-align: left; min-height: 42px; }
-.chk-compact-btn i { width: 17px; height: 17px; border: 1.5px solid var(--faint); border-radius: 3px; flex: 0 0 auto; display: grid; place-items: center; font-style: normal; font-size: 11px; color: #fff; }
-.chk-compact-btn.on { color: var(--go); }
+.chk-compact-btn { flex: 1; display: flex; align-items: center; gap: 8px; background: none; border: none; padding: 6px 12px; font-weight: 600; font-size: 13px; text-align: left; min-height: 34px; }
+.chk-compact-btn i { width: 15px; height: 15px; border: 1.5px solid var(--faint); border-radius: 3px; flex: 0 0 auto; display: grid; place-items: center; font-style: normal; font-size: 10px; color: #fff; }
+.chk-compact-btn.on { color: var(--soft); font-weight: 500; text-decoration: line-through; text-decoration-color: var(--faint); }
 .chk-compact-btn.on i { background: var(--go); border-color: var(--go); }
 .chk-compact-btn.on i::after { content: "✓"; }
 .chk-compact-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chk-compact-why { flex: 0 0 auto; background: none; border: none; color: var(--faint); font-size: 11.5px; font-weight: 600; padding: 4px 12px; min-height: 42px; }
+.chk-compact-why { flex: 0 0 auto; background: none; border: none; color: var(--faint); font-size: 11px; font-weight: 600; padding: 4px 12px; min-height: 34px; }
 .chk-compact-skip { flex: 0 0 auto; padding: 0 10px; max-width: 55%; }
-.chk-compact-skip .prompt-sub { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chk-compact-skip .reason-picker { margin: 0; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
-.chk-compact-skip .reason-picker button { flex: 0 0 auto; }
+.chk-compact-skip .prompt-sub { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+.chk-compact-skip .reason-picker { margin: 0; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; gap: 4px; }
+.chk-compact-skip .reason-picker button { flex: 0 0 auto; padding: 4px 9px; min-height: 26px; font-size: 11px; }
 
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
