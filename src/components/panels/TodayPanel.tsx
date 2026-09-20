@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { currentSchedIndex } from '@/lib/dates';
 import { AppState, DayEntry, SchedRow } from '@/lib/types';
 import HabitList from '../HabitList';
@@ -12,6 +13,56 @@ import TaskList from '../TaskList';
 
 function getDay(state: AppState, key: string): DayEntry {
   return state.days[key] ?? { c: {}, n: {} };
+}
+
+/**
+ * One compact, single-line activity row: checkbox + title, with the
+ * skip-reason picker tucked behind a small "why?" trigger instead of always
+ * showing its own line, so a long list of daily activities stays scannable
+ * on a phone without excess scrolling.
+ */
+function ActivityRow({
+  checkKey,
+  label,
+  done,
+  onToggle,
+  state,
+  update,
+  todayKey,
+}: {
+  checkKey: string;
+  label: string;
+  done: boolean;
+  onToggle: () => void;
+  state: AppState;
+  update: (fn: (draft: AppState) => void) => void;
+  todayKey: string;
+}) {
+  const [showSkip, setShowSkip] = useState(false);
+  const skipped = state.skips.find((s) => s.date === todayKey && s.checkKey === checkKey);
+
+  return (
+    <div className="chk-compact">
+      <button
+        className={'chk-compact-btn' + (done ? ' on' : '')}
+        onClick={onToggle}
+        aria-pressed={done}
+      >
+        <i />
+        <span>{label}</span>
+      </button>
+      {!done && !skipped && !showSkip && (
+        <button className="chk-compact-why" onClick={() => setShowSkip(true)} aria-label={`Why skip ${label}?`}>
+          why?
+        </button>
+      )}
+      {!done && (showSkip || skipped) && (
+        <div className="chk-compact-skip">
+          <SkipReasonPrompt state={state} update={update} date={todayKey} checkKey={checkKey} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** One activity-list row: a check key plus the label/sub text to show. */
@@ -83,35 +134,35 @@ export default function TodayPanel({
   };
 
   const activities = buildActivities(rows, state.checks);
+  const doneCount = activities.filter((a) => day.c[a.key]).length;
 
   return (
     <section className="panel">
+      <div className="today-head">
+        <h2 style={{ margin: 0 }}>Today&apos;s activities</h2>
+        <span className="today-count">{doneCount} / {activities.length}</span>
+      </div>
+      <div className="chk-compact-list">
+        {activities.map(({ key, label: lbl }) => (
+          <ActivityRow
+            key={key}
+            checkKey={key}
+            label={lbl}
+            done={!!day.c[key]}
+            onToggle={() => toggleCheck(key)}
+            state={state}
+            update={update}
+            todayKey={todayKey}
+          />
+        ))}
+      </div>
+
       {dayOfWeek === 0 && <SundayReview state={state} update={update} curWeek={curWeek} />}
 
       <StalePeoplePrompt state={state} update={update} todayKey={todayKey} today={now ?? new Date(0)} />
       <TaskList state={state} update={update} todayKey={todayKey} curWeek={curWeek} />
       <HabitList state={state} update={update} todayKey={todayKey} today={now ?? new Date(0)} />
       <MilestonePrompt state={state} update={update} todayKey={todayKey} today={now ?? new Date(0)} />
-
-      <h2>Today&apos;s activities</h2>
-      <div className="chk-list">
-        {activities.map(({ key, label: lbl, sub }) => (
-          <div key={key}>
-            <button
-              className={'chk' + (day.c[key] ? ' on' : '')}
-              onClick={() => toggleCheck(key)}
-              aria-pressed={!!day.c[key]}
-            >
-              <i />
-              <span>
-                {lbl}
-                {sub ? <em>{sub}</em> : null}
-              </span>
-            </button>
-            {!day.c[key] && <SkipReasonPrompt state={state} update={update} date={todayKey} checkKey={key} />}
-          </div>
-        ))}
-      </div>
 
       <h2>Count</h2>
       <div className="counters">
