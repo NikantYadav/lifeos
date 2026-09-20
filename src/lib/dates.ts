@@ -1,4 +1,3 @@
-import { START } from './data';
 import { SchedRow } from './types';
 
 /**
@@ -35,27 +34,35 @@ export function mondayOf(d: Date): Date {
   return x;
 }
 
-/** Monday of the week containing START — the anchor every week index counts from. */
-const WEEK_ONE_MONDAY = mondayOf(START);
-
 export const TOTAL_WEEKS = 24;
+
+/**
+ * Monday of the week containing the plan's start date. `startDate` is
+ * `AppState.startDate` (a `YYYY-MM-DD` key) — the anchor every week index
+ * counts from. Stored per-state (not a fixed constant) so a "Restart plan"
+ * action can move it, re-zeroing the whole week-index scheme.
+ */
+function weekOneMonday(startDate: string): Date {
+  return mondayOf(fromIso(startDate));
+}
 
 /**
  * Which plan week `today` falls in, as a 0-based index.
  *
- * Counts Monday-aligned weeks from WEEK_ONE_MONDAY so that this agrees with
- * `weekDates` about where a week starts. Adding days rather than dividing by
- * 7×864e5 keeps it correct across any DST transition.
+ * Counts Monday-aligned weeks from the plan's start date so that this agrees
+ * with `weekDates` about where a week starts. Adding days rather than
+ * dividing by 7×864e5 keeps it correct across any DST transition.
  */
-export function currentWeekIndex(today: Date): number {
-  const days = daysBetween(WEEK_ONE_MONDAY, today);
+export function currentWeekIndex(today: Date, startDate: string): number {
+  const days = daysBetween(weekOneMonday(startDate), today);
   return Math.max(0, Math.min(TOTAL_WEEKS - 1, Math.floor(days / 7)));
 }
 
 /** The seven local date keys of plan week `wi`, Monday first. */
-export function weekDates(wi: number): string[] {
+export function weekDates(wi: number, startDate: string): string[] {
+  const anchor = weekOneMonday(startDate);
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(WEEK_ONE_MONDAY);
+    const d = new Date(anchor);
     d.setDate(d.getDate() + wi * 7 + i);
     return iso(d);
   });

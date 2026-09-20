@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { DAYNAMES } from '@/lib/data';
 import { AppState, DiffDecision, newId, ProposedDiff } from '@/lib/types';
 
 interface GeneratedReview {
@@ -15,12 +16,54 @@ function formatValue(v: unknown): string {
   return String(v);
 }
 
-function diffLabel(d: ProposedDiff): string {
-  if (d.kind === 'plan') return `${d.planId ?? 'plan'} · ${d.field ?? ''}`;
-  if (d.kind === 'schedule') return `Schedule · day ${d.dayOfWeek}`;
-  if (d.kind === 'weekGoals') return `Weekly goal · ${d.key}`;
-  if (d.kind === 'task') return `Task · ${d.op}`;
-  return `Habit · ${d.op}`;
+/** Plain-English name for a plan field, for a reader who doesn't know the schema. */
+const FIELD_NAMES: Record<string, string> = {
+  aim: 'goal',
+  when: 'timing',
+  where: 'location',
+  how: 'approach',
+  quota: 'quota',
+  warn: 'warning',
+  milestones: 'milestones',
+};
+
+/** What kind of thing this diff touches, in plain words — shown as a small tag above the change. */
+function diffLabel(d: ProposedDiff, planName: string): string {
+  if (d.kind === 'plan') return `${planName} plan — ${FIELD_NAMES[d.field ?? ''] ?? d.field ?? 'detail'}`;
+  if (d.kind === 'schedule') return `Weekly schedule — ${DAYNAMES[d.dayOfWeek ?? 0]}`;
+  if (d.kind === 'weekGoals') return `Weekly target — ${d.key}`;
+  if (d.kind === 'task') {
+    if (d.op === 'add') return 'New task';
+    if (d.op === 'drop') return 'Cancel task';
+    return 'Reschedule task';
+  }
+  if (d.op === 'add') return 'New habit';
+  return 'Drop habit';
+}
+
+/** One-line, jargon-free description of what changes — no diff/patch conventions. */
+function diffSummary(d: ProposedDiff): string {
+  if (d.kind === 'task') {
+    if (d.op === 'add') return `Add "${d.title}" to your task list.`;
+    if (d.op === 'drop') return `Remove "${formatValue(d.before)}" from your task list.`;
+    if (d.op === 'retime') {
+      const from = Number(d.before), to = Number(d.after);
+      return `Move this task from week ${from + 1} to week ${to + 1}.`;
+    }
+  }
+  if (d.kind === 'habit') {
+    if (d.op === 'add') return `Add "${d.title}" as a new habit.`;
+    return `Remove "${formatValue(d.before)}" from your habits.`;
+  }
+  if (d.kind === 'weekGoals') {
+    return `Change the weekly target from ${formatValue(d.before)} to ${formatValue(d.after)}.`;
+  }
+  if (d.kind === 'schedule') {
+    return `Change the start time from ${formatValue(d.before)} to ${formatValue(d.after)}.`;
+  }
+  // plan field — arrays (milestones, how, etc.) get a "was / now" pair; scalars get a sentence.
+  if (Array.isArray(d.before) || Array.isArray(d.after)) return 'See the change below.';
+  return `Change this from "${formatValue(d.before)}" to "${formatValue(d.after)}".`;
 }
 
 /** task/habit diffs carry structured fields (title/detail/triggerWeek), not one scalar value — no free-text edit for these. */
@@ -184,13 +227,19 @@ export default function SundayReview({
           {review.proposedDiffs.map((diff, i) => {
             const decision = decisions[i];
             const editable = isEditable(diff);
+            const planName = state.plans.find((p) => p.id === diff.planId)?.name ?? diff.planId ?? 'plan';
+            const showRaw = diff.kind !== 'task' && diff.kind !== 'habit' && diff.kind !== 'weekGoals' && diff.kind !== 'schedule';
             return (
               <div className={'diff-card' + (decision ? ` decided ${decision}` : '')} key={i}>
-                <div className="diff-reason">{diffLabel(diff)} — {diff.reason}</div>
-                <div className="diff-values">
-                  <div className="diff-before">{formatValue(diff.before)}</div>
-                  <div className="diff-after">{formatValue(diff.after)}</div>
-                </div>
+                <div className="diff-tag">{diffLabel(diff, planName)}</div>
+                <div className="diff-summary">{diffSummary(diff)}</div>
+                {showRaw && (
+                  <div className="diff-values">
+                    <div className="diff-was"><span className="diff-tiny-label">Was</span> {formatValue(diff.before)}</div>
+                    <div className="diff-now"><span className="diff-tiny-label">Now</span> {formatValue(diff.after)}</div>
+                  </div>
+                )}
+                <div className="diff-reason">Why: {diff.reason}</div>
                 {decision === 'edited' && editable && (
                   <textarea
                     value={editValues[i] ?? formatValue(diff.after)}

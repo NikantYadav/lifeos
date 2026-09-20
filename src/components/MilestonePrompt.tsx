@@ -10,7 +10,7 @@ interface DueMilestone {
 }
 
 function dueMilestones(state: AppState, today: Date): DueMilestone[] {
-  const curWeek = currentWeekIndex(today);
+  const curWeek = currentWeekIndex(today, state.startDate);
   const out: DueMilestone[] = [];
   for (const plan of state.plans) {
     for (const [week, description] of plan.milestones ?? []) {

@@ -54,6 +54,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hero-meta { margin-left: 0; width: 100%; text-align: left; font-size: 13px; color: var(--soft); line-height: 1.35; }
 .hero-meta b { display: block; color: var(--ink); font-size: 17px; font-weight: 700; }
 
+.hero-restart { margin-left: auto; flex: 0 0 auto; background: none; border: 1px solid var(--rule); border-radius: 3px; padding: 6px 10px; font-size: 12px; font-weight: 700; color: var(--soft); min-height: 32px; }
+.hero-restart:hover { color: var(--ink); border-color: var(--soft); }
+.hero-restart-confirm { margin-top: 10px; padding: 12px; border: 1.5px solid var(--no); border-radius: 4px; background: var(--no-bg); }
+.hero-restart-confirm p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.45; color: var(--ink); }
+.hero-restart-note { font-weight: 700; color: var(--no) !important; }
+.hero-restart-actions { display: flex; gap: 8px; }
+.hero-restart-actions button { border: 1px solid var(--rule); background: var(--card); border-radius: 3px; padding: 8px 14px; font-size: 13px; font-weight: 700; min-height: 38px; }
+.hero-restart-actions button.danger { background: var(--no); border-color: var(--no); color: var(--card); }
+
 .hero-toggle { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 14px; background: none; border: none; padding: 4px 0; text-align: left; }
 .hero-toggle-track { flex: 1; height: 6px; border-radius: 99px; background: var(--grid); overflow: hidden; }
 .hero-toggle-fill { display: block; height: 100%; background: var(--go); }
@@ -286,10 +295,13 @@ details.history-disclosure > summary::-webkit-details-marker { display: none; }
 .review-card .narrative, .review-card .pattern { font-size: 14px; margin: 6px 0; }
 .review-card .pattern { color: var(--focus); font-weight: 600; }
 .diff-card { border: 1px solid var(--rule); border-radius: 4px; padding: 10px 12px; margin-top: 10px; }
-.diff-card .diff-reason { font-size: 12.5px; color: var(--soft); margin-bottom: 6px; }
-.diff-card .diff-values { display: grid; gap: 6px; font-size: 13px; margin-bottom: 8px; }
-.diff-card .diff-before { color: var(--no); text-decoration: line-through; opacity: .75; }
-.diff-card .diff-after { color: var(--go); font-weight: 600; }
+.diff-card .diff-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--focus); margin-bottom: 4px; }
+.diff-card .diff-summary { font-size: 14px; margin-bottom: 6px; }
+.diff-card .diff-reason { font-size: 12.5px; color: var(--soft); margin-bottom: 8px; }
+.diff-card .diff-values { display: grid; gap: 6px; font-size: 13px; margin-bottom: 8px; padding: 8px 10px; background: var(--paper); border-radius: 3px; }
+.diff-card .diff-tiny-label { display: inline-block; width: 42px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: var(--faint); }
+.diff-card .diff-was { color: var(--soft); }
+.diff-card .diff-now { color: var(--ink); font-weight: 600; }
 .diff-card .diff-actions { display: flex; gap: 6px; }
 .diff-card .diff-actions button { border: 1px solid var(--rule); background: var(--paper); border-radius: 3px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; min-height: 34px; }
 .diff-card.decided.accepted, .diff-card.decided.edited { border-color: var(--go); background: var(--go-bg); }

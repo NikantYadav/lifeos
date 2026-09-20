@@ -30,7 +30,7 @@ function stripFixedFields(plan: Plan): SafePlan {
 
 /** Pure, read-only assembly of everything the Sunday review prompt needs. */
 export function buildReviewContext(state: AppState, now: Date): ReviewContext {
-  const weekIdx = currentWeekIndex(now);
+  const weekIdx = currentWeekIndex(now, state.startDate);
 
   const weeksOfHistory = [3, 2, 1, 0]
     .map((back) => weekIdx - back)

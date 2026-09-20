@@ -27,12 +27,12 @@ export default function Home() {
   const ready = now !== null;
 
   const todayKey = iso(today);
-  const curWeek = currentWeekIndex(today);
+  const curWeek = currentWeekIndex(today, state.startDate);
   const dayOfWeek = today.getDay();
 
   return (
     <div className="wrap">
-      <Hero state={state} today={today} curWeek={curWeek} ready={ready} />
+      <Hero state={state} update={update} today={today} curWeek={curWeek} ready={ready} />
       <Nav active={tab} onChange={setTab} />
 
       <div id={panelId(tab)} role="tabpanel" aria-labelledby={tabId(tab)} tabIndex={-1}>

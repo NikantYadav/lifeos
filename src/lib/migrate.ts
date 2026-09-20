@@ -6,11 +6,13 @@ import {
   SEED_SCHEDULE,
   SEED_TASKS,
   SEED_WEEK_GOALS,
+  START,
 } from './data';
 import { AppState, newId } from './types';
+import { iso } from './dates';
 
 /** Bump when the seed shape in data.ts changes, to re-run migration once more. */
-export const CURRENT_SEED_VERSION = 4;
+export const CURRENT_SEED_VERSION = 5;
 
 /**
  * Titles removed from SEED_TASKS/SEED_HABITS after some deployments had
@@ -37,6 +39,7 @@ export function migrateState(state: AppState): AppState {
 
   const seeded: AppState = {
     ...state,
+    startDate: state.startDate || iso(START),
     plans: state.plans.length ? state.plans : structuredClone(SEED_PLANS),
     schedule: Object.keys(state.schedule).length ? state.schedule : structuredClone(SEED_SCHEDULE),
     weekGoals: Object.keys(state.weekGoals).length ? state.weekGoals : { ...SEED_WEEK_GOALS },

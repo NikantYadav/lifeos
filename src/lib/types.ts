@@ -159,6 +159,14 @@ export interface AppState {
   /** Baseline weigh-in, so deleting a row never rewrites the Change column. */
   baselineKg?: number;
 
+  /**
+   * `YYYY-MM-DD` key. The anchor every week index (`currentWeekIndex`,
+   * `weekDates`) counts from — Monday of the week containing this date is
+   * week 0's first day. Seeded from data.ts's `START` once, then owned by
+   * the saved state so "Restart plan" can move it without a redeploy.
+   */
+  startDate: string;
+
   /** Editable plan content — seeded from data.ts once, then user/AI-editable. */
   plans: Plan[];
   schedule: WeekSchedule;
@@ -186,6 +194,7 @@ export const EMPTY_STATE: AppState = {
   people: [],
   approaches: [],
   weights: [],
+  startDate: '2026-09-15',
   plans: [],
   schedule: {},
   weekGoals: {},

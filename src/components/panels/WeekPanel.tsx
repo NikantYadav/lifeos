@@ -51,7 +51,7 @@ function ScoreGrid({ rows, totals, goals }: { rows: [string, string][]; totals: 
 
 export default function WeekPanel({ state, curWeek, todayKey }: { state: AppState; curWeek: number; todayKey: string }) {
   const t = weekTotals(state, curWeek);
-  const dates = weekDates(curWeek);
+  const dates = weekDates(curWeek, state.startDate);
   const today = fromIso(todayKey);
 
   return (

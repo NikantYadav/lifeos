@@ -14,7 +14,7 @@ export function weekTotals(state: AppState, wi: number): Record<string, number> 
   const totals: Record<string, number> = {};
   Object.keys(state.weekGoals).forEach((k) => (totals[k] = 0));
 
-  weekDates(wi).forEach((key) => {
+  weekDates(wi, state.startDate).forEach((key) => {
     const day = state.days[key];
     if (!day) return;
     state.counts.forEach(([ck]) => (totals[ck] = (totals[ck] ?? 0) + (day.n?.[ck] ?? 0)));

@@ -404,6 +404,8 @@ export function parseState(input: unknown): AppState {
     ),
     ...(baseline !== null && baseline > 0 ? { baselineKg: baseline } : {}),
 
+    startDate: dateKey(input.startDate) ?? EMPTY_STATE.startDate,
+
     plans: collect(input.plans, plan),
     schedule: weekSchedule(input.schedule) ?? {},
     weekGoals: numberRecord(input.weekGoals),
