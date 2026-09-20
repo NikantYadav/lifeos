@@ -85,12 +85,3 @@ export function currentSchedIndex(rows: SchedRow[], now: Date): number {
   }
   return -1;
 }
-
-/** Minutes from `now` until the block after `rows[index]` starts, wrapping past midnight. */
-export function minutesUntilNext(rows: SchedRow[], index: number, now: Date): number | null {
-  if (index < 0 || index >= rows.length) return null;
-  const mins = now.getHours() * 60 + now.getMinutes();
-  const nextStart = index + 1 < rows.length ? minutesOf(rows[index + 1][0]) : minutesOf(rows[0][0]);
-  const diff = nextStart - mins;
-  return diff >= 0 ? diff : diff + 24 * 60;
-}

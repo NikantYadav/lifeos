@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { DAYNAMES, SPLIT } from '@/lib/data';
+import { DAILY_GYM_ADDONS, DAYNAMES, SPLIT } from '@/lib/data';
 import { AppState, newId } from '@/lib/types';
 
 export default function BodyPanel({
@@ -57,6 +57,10 @@ export default function BodyPanel({
           ))}
         </ul>
       </div>
+      <p className="note" style={{ margin: '10px 0 0' }}>
+        Every session, on top of the day&apos;s split: {DAILY_GYM_ADDONS}. Right-shoulder band
+        rehab work goes before the lift, as a warm-up — see the Gym plan for detail.
+      </p>
 
       <h2>Weight</h2>
       <div className="box pad">

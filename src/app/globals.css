@@ -161,6 +161,7 @@ h2:first-child { margin-top: 0; }
 .ctr.hit .val { color: var(--go); }
 
 .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.chk-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
 .chk { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--rule); border-radius: 4px; padding: 10px; font-weight: 600; font-size: 13px; text-align: left; width: 100%; min-height: 44px; }
 .chk i { width: 19px; height: 19px; border: 1.5px solid var(--faint); border-radius: 3px; flex: 0 0 auto; display: grid; place-items: center; font-style: normal; font-size: 12px; color: #fff; }
 .chk.on { border-color: var(--go); background: var(--go-bg); }
