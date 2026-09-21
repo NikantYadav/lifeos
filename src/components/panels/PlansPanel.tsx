@@ -14,8 +14,29 @@ function BoldList({ items }: { items: string[] }) {
   );
 }
 
-export default function PlansPanel({ plans }: { plans: Plan[] }) {
+export default function PlansPanel({
+  plans,
+  openPlanId,
+  onOpenPlanIdHandled,
+}: {
+  plans: Plan[];
+  /** Set from outside (e.g. an activity link on Today) to jump straight to a plan. */
+  openPlanId?: string | null;
+  onOpenPlanIdHandled?: () => void;
+}) {
   const [curPlan, setCurPlan] = useState<string | null>(null);
+
+  // An external jump request (e.g. an activity link on Today) takes over the
+  // panel's own selection. Adjusted during render, per React's guidance for
+  // state that must sync to a changing prop, rather than in an effect — that
+  // would render once with the stale selection, then again with the jump
+  // applied. The parent clears `openPlanId` back to null right after this
+  // runs, so the `curPlan !== openPlanId` check is what stops it looping.
+  if (openPlanId && curPlan !== openPlanId) {
+    setCurPlan(openPlanId);
+    onOpenPlanIdHandled?.();
+  }
+
   const plan = plans.find((p) => p.id === curPlan) ?? null;
 
   if (!plan) {

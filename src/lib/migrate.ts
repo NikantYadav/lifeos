@@ -12,7 +12,7 @@ import { AppState, newId } from './types';
 import { iso } from './dates';
 
 /** Bump when the seed shape in data.ts changes, to re-run migration once more. */
-export const CURRENT_SEED_VERSION = 5;
+export const CURRENT_SEED_VERSION = 6;
 
 /**
  * Titles removed from SEED_TASKS/SEED_HABITS after some deployments had
@@ -86,6 +86,26 @@ export function migrateState(state: AppState): AppState {
     const existingPlanIds = new Set(seeded.plans.map((p) => p.id));
     const newPlans = SEED_PLANS.filter((p) => !existingPlanIds.has(p.id));
     if (newPlans.length) seeded.plans = [...seeded.plans, ...structuredClone(newPlans)];
+  }
+
+  /**
+   * Photo drill moved from a habit (Mon/Thu cadence) to a real schedule row
+   * (PHOTO_DRILL_ROW, 22:55 Mon/Thu) so it stops double-booking Today as both
+   * a "Due" prompt and a timetable checkbox, and "Self-timer set" was
+   * reworded to actually say what it is. Schedule is rewritten outright, same
+   * as the seedVersion 4 step, since it's authored content with no editor.
+   * The habit list keeps any habit the user has since renamed/added — only
+   * the exact old title is dropped or replaced.
+   */
+  if (state.seedVersion < 6) {
+    seeded.schedule = structuredClone(SEED_SCHEDULE);
+    seeded.habits = seeded.habits
+      .filter((h) => h.title !== 'Photo drill — 10 min')
+      .map((h) =>
+        h.title === 'Self-timer set — 30 shots'
+          ? { ...h, title: 'Self-timer photos — 30 solo shots on a timer, practicing poses' }
+          : h
+      );
   }
 
   return seeded;

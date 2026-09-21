@@ -23,5 +23,14 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|login|api/login).*)'],
+  // sw.js and the manifest/icons must be reachable unauthenticated: the
+  // browser fetches them (and may re-register the worker) outside of any
+  // page's cookie-bearing navigation, and a redirect-to-/login response in
+  // place of the worker script would break install/push for everyone.
+  // api/push/cron is excluded here because it's bearer-secret gated instead
+  // (see that route) — a scheduler has no browser session to carry the
+  // lifeos_auth cookie this middleware otherwise requires.
+  matcher: [
+    '/((?!_next/static|_next/image|favicon\\.ico|apple-icon\\.png|login|api/login|api/push/cron|sw\\.js|manifest\\.webmanifest|icon.*\\.(?:svg|png)|badge.*\\.png).*)',
+  ],
 };

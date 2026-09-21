@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   description: "A six-month personal operating plan.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Life OS", statusBarStyle: "default" },
+  // Root-level favicon.ico and apple-icon.png (both real Life OS art) are
+  // picked up by Next's file-convention metadata and win over anything set
+  // here, so a matching `icons` entry here would be dead code.
 };
 
 export const viewport: Viewport = {

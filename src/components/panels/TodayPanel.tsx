@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { currentSchedIndex } from '@/lib/dates';
-import { AppState, DayEntry, SchedRow } from '@/lib/types';
+import { AppState, DayEntry, Plan, SchedRow } from '@/lib/types';
 import HabitList from '../HabitList';
 import MilestonePrompt from '../MilestonePrompt';
 import SchedList from '../SchedList';
@@ -29,6 +29,8 @@ function ActivityRow({
   state,
   update,
   todayKey,
+  planId,
+  onOpenPlan,
 }: {
   checkKey: string;
   label: string;
@@ -37,6 +39,8 @@ function ActivityRow({
   state: AppState;
   update: (fn: (draft: AppState) => void) => void;
   todayKey: string;
+  planId?: string;
+  onOpenPlan?: (planId: string) => void;
 }) {
   const [showSkip, setShowSkip] = useState(false);
   const skipped = state.skips.find((s) => s.date === todayKey && s.checkKey === checkKey);
@@ -51,6 +55,18 @@ function ActivityRow({
         <i />
         <span>{label}</span>
       </button>
+      {planId && onOpenPlan && (
+        <button
+          className="chk-compact-plan"
+          onClick={() => onOpenPlan(planId)}
+          aria-label={`Open plan details for ${label}`}
+          title="Open plan details"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 4h6v6M10 14L20 4M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" />
+          </svg>
+        </button>
+      )}
       {!done && !skipped && !showSkip && (
         <button className="chk-compact-why" onClick={() => setShowSkip(true)} aria-label={`Why skip ${label}?`}>
           why?
@@ -70,6 +86,8 @@ interface Activity {
   key: string;
   label: string;
   sub?: string;
+  /** The plan this activity's details live in, when one shares its id. */
+  planId?: string;
 }
 
 /**
@@ -78,19 +96,20 @@ interface Activity {
  * covered by one of those rows (protein, skin, etc. have no schedule row on
  * every day, so they'd otherwise never surface as a toggle).
  */
-function buildActivities(rows: SchedRow[], checks: AppState['checks']): Activity[] {
+function buildActivities(rows: SchedRow[], checks: AppState['checks'], plans: Plan[]): Activity[] {
+  const planIds = new Set(plans.map((p) => p.id));
   const fromSchedule: Activity[] = [];
   const seen = new Set<string>();
 
   for (const [, title, note, isKeyBlock, planId] of rows) {
     if (!isKeyBlock || !planId || seen.has(planId)) continue;
     seen.add(planId);
-    fromSchedule.push({ key: planId, label: title, sub: note || undefined });
+    fromSchedule.push({ key: planId, label: title, sub: note || undefined, planId: planIds.has(planId) ? planId : undefined });
   }
 
   const fromChecks: Activity[] = checks
     .filter(([k]) => !seen.has(k))
-    .map(([k, lbl, sub]) => ({ key: k, label: lbl, sub: sub || undefined }));
+    .map(([k, lbl, sub]) => ({ key: k, label: lbl, sub: sub || undefined, planId: planIds.has(k) ? k : undefined }));
 
   return [...fromSchedule, ...fromChecks];
 }
@@ -102,6 +121,7 @@ export default function TodayPanel({
   dayOfWeek,
   now,
   curWeek,
+  onOpenPlan,
 }: {
   state: AppState;
   update: (fn: (draft: AppState) => void) => void;
@@ -109,6 +129,7 @@ export default function TodayPanel({
   dayOfWeek: number;
   now: Date | null;
   curWeek: number;
+  onOpenPlan?: (planId: string) => void;
 }) {
   const day = getDay(state, todayKey);
   const entry = state.schedule[dayOfWeek];
@@ -133,7 +154,7 @@ export default function TodayPanel({
     });
   };
 
-  const activities = buildActivities(rows, state.checks);
+  const activities = buildActivities(rows, state.checks, state.plans);
   const doneCount = activities.filter((a) => day.c[a.key]).length;
   // Not-done first, done sunk to the bottom — stable within each group so
   // the list doesn't reshuffle beyond moving a just-ticked item down.
@@ -148,7 +169,7 @@ export default function TodayPanel({
         <span className="today-count">{doneCount} / {activities.length}</span>
       </div>
       <div className="chk-compact-list">
-        {ordered.map(({ key, label: lbl }) => (
+        {ordered.map(({ key, label: lbl, planId }) => (
           <ActivityRow
             key={key}
             checkKey={key}
@@ -158,6 +179,8 @@ export default function TodayPanel({
             state={state}
             update={update}
             todayKey={todayKey}
+            planId={planId}
+            onOpenPlan={onOpenPlan}
           />
         ))}
       </div>

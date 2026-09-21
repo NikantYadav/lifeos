@@ -19,6 +19,14 @@ import PhasesPanel from '@/components/panels/PhasesPanel';
 export default function Home() {
   const { state, update, status } = useAppState();
   const [tab, setTab] = useState<Tab>('today');
+  const [openPlanId, setOpenPlanId] = useState<string | null>(null);
+
+  // Jump to a plan from anywhere (e.g. an activity link on the Today panel):
+  // switch to the Plans tab with that plan already open.
+  const openPlan = (planId: string) => {
+    setOpenPlanId(planId);
+    setTab('plans');
+  };
 
   // Ticks every minute, so an app left open overnight rolls over to the new
   // day instead of writing to yesterday's key.
@@ -44,10 +52,13 @@ export default function Home() {
             dayOfWeek={dayOfWeek}
             now={now}
             curWeek={curWeek}
+            onOpenPlan={openPlan}
           />
         )}
         {tab === 'timetable' && <TimetablePanel schedule={state.schedule} dayOfWeek={dayOfWeek} now={now} />}
-        {tab === 'plans' && <PlansPanel plans={state.plans} />}
+        {tab === 'plans' && (
+          <PlansPanel plans={state.plans} openPlanId={openPlanId} onOpenPlanIdHandled={() => setOpenPlanId(null)} />
+        )}
         {tab === 'week' && <WeekPanel state={state} curWeek={curWeek} todayKey={todayKey} />}
         {tab === 'people' && (
           <PeoplePanel state={state} update={update} todayKey={todayKey} today={today} />

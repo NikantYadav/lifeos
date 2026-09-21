@@ -19,6 +19,8 @@ const NECK_ROW: SchedRow = ['22:35', 'Neck exercises — 5 min', 'Isometrics, si
 const POSTURE_ROW: SchedRow = ['22:40', 'Posture — 5 min', 'Wall angels, doorway chest stretch, prone Y-raise', 1, 'posture'];
 const SEXUAL_HEALTH_ROW: SchedRow = ['22:45', 'Kegels + reverse kegel — 5 min', '', 1, 'sexual-health'];
 const JOURNAL_ROW: SchedRow = ['22:50', 'Journal — 10 min', 'Write it down before the day is gone', 1, 'journal'];
+/** Mon and Thu only, per the dating plan's `when` — after the wind-down stack, still before Sleep. */
+const PHOTO_DRILL_ROW: SchedRow = ['22:55', 'Photo drill — 10 min', 'Mirror. Five positions cold — weight on back foot, three-quarter turn, walking shot, leaning, candid laugh.', 1, 'dating'];
 
 export const SEED_SCHEDULE: WeekSchedule = {
   1: ['Monday — office. Chest, biceps.', [
@@ -37,7 +39,7 @@ export const SEED_SCHEDULE: WeekSchedule = {
     ['21:30', 'Russian — 20 min', '', undefined, 'russian'],
     ['22:00', 'Read', '', undefined, 'read'],
     ['22:20', 'Impromptu / Dictio — 10 min', 'Articulation and dictation practice', 1, 'speak'],
-    NECK_ROW, POSTURE_ROW, SEXUAL_HEALTH_ROW, JOURNAL_ROW,
+    NECK_ROW, POSTURE_ROW, SEXUAL_HEALTH_ROW, JOURNAL_ROW, PHOTO_DRILL_ROW,
     ['23:00', 'Sleep', ''],
   ]],
   2: ['Tuesday — WFH + gym trip. Back, triceps.', [
@@ -92,7 +94,7 @@ export const SEED_SCHEDULE: WeekSchedule = {
     ['20:30', 'Dinner', ''],
     ['21:30', 'Russian', '', undefined, 'russian'],
     ['22:20', 'Impromptu / Dictio — 10 min', 'Articulation and dictation practice', 1, 'speak'],
-    NECK_ROW, POSTURE_ROW, SEXUAL_HEALTH_ROW, JOURNAL_ROW,
+    NECK_ROW, POSTURE_ROW, SEXUAL_HEALTH_ROW, JOURNAL_ROW, PHOTO_DRILL_ROW,
     ['23:00', 'Sleep', ''],
   ]],
   5: ['Friday — office. Back, triceps, shoulders.', [
@@ -187,7 +189,7 @@ export const SEED_PLANS: Plan[] = [
     milestones: [[4, 'Café picked, staff recognise you'], [8, 'Guide has 25 places on it'], [16, 'You are on first-name terms at three places']] },
 
   { id: 'dating', name: 'Dating and photos', aim: 'Real photos by late January, dating live for the last six weeks.',
-    when: ['Photo drill: 10 min, twice a week, Mon and Thu before bed', 'Self-timer set: 30 shots, once a month', 'Real shoot: week 19, a Saturday'],
+    when: ['Photo drill: 10 min, twice a week, Mon and Thu before bed', 'Self-timer set: once a month — prop the phone on a timer, 30 solo shots practicing the five positions, keep your best 3', 'Real shoot: week 19, a Saturday'],
     where: ['Mirror in your room for the drill', 'Shoot: three spots on a Saturday evening, golden hour, a friend with a phone'],
     how: ['Five positions to learn cold: weight on back foot with hands doing something · three-quarter turn · walking shot · leaning with one limb bent · candid laugh.', 'Never square-on with arms hanging. Always bend something. Chin forward and down. Look away in one shot of three.', 'Shoot from chest height. Low angles make tall people loom.', 'Once a month: 30 self-timer shots, pick 3, write down what was different.', 'Week 2: baseline set. It will be bad. It is your before, and it gets you on the apps now.', 'Week 19: the real set. 200 shots, keep six — clear face · full body · doing something · with 1–2 friends · a place with character · something with personality.', 'Your camera habit is quietly solving this. By January you will have months of real photos of yourself doing interesting things, which beats any posed shoot.'],
     milestones: [[2, 'Baseline photos, apps live'], [19, 'Real set shot, profiles rebuilt'], [24, 'Dating on good photos']] },
@@ -288,7 +290,7 @@ export const SEED_PLANS: Plan[] = [
 export const SEED_CHECKS: [string, string, string][] = [
   ['gym', 'Gym done', 'Mon–Fri'],
   ['startup', 'Startup block done', 'Before 11am'],
-  ['protein', '150g+ protein', ''],
+  ['protein', '100g+ protein', ''],
   ['out', 'Got out of the room', 'Mon, Tue, Thu, Fri, Sat'],
   ['record', 'Voice note recorded', '5 min, listen back once'],
   ['russian', 'Russian, 20 min', ''],
@@ -317,10 +319,14 @@ export const SEED_TASKS: Omit<Task, 'id' | 'createdAt' | 'status'>[] = [
   { title: 'Shoot the real photo set', detail: '200 shots, keep six — clear face, full body, doing something, with friends, a place with character, personality.', planId: 'dating', triggerWeek: 18 },
 ];
 
-/** Materialized into AppState.habits by migrateState() on first load. */
+/**
+ * Materialized into AppState.habits by migrateState() on first load.
+ * Photo drill lives in SEED_SCHEDULE instead (Mon/Thu, PHOTO_DRILL_ROW) since
+ * it has a fixed weekly slot — putting it here too would show it twice on
+ * Today, once as a "Due" prompt and once as a schedule row.
+ */
 export const SEED_HABITS: Omit<Habit, 'id' | 'createdAt'>[] = [
-  { title: 'Photo drill — 10 min', planId: 'dating', cadence: { kind: 'weeklyOnDays', days: [1, 4] } },
-  { title: 'Self-timer set — 30 shots', planId: 'dating', cadence: { kind: 'everyNWeeks', n: 4 } },
+  { title: 'Self-timer photos — 30 solo shots on a timer, practicing poses', planId: 'dating', cadence: { kind: 'everyNWeeks', n: 4 } },
   { title: 'Monthly startup review', planId: 'startup', cadence: { kind: 'everyNWeeks', n: 4 } },
 ];
 

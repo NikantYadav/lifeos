@@ -86,7 +86,7 @@ export interface Habit {
   createdAt: number;
 }
 
-export type SkipReason = 'tired' | 'work' | 'no_want' | 'no_plan' | 'sick' | 'better';
+export type SkipReason = 'tired' | 'work' | 'no_want' | 'no_plan' | 'sick' | 'better' | 'custom';
 
 export interface SkipRecord {
   id: string;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import InstallSettings from './InstallSettings';
 
 export type Tab =
   | 'today' | 'timetable' | 'plans' | 'week' | 'people'
@@ -80,11 +81,21 @@ const MORE_ICON = (
   </svg>
 );
 
+const SETTINGS_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 13a7.7 7.7 0 0 0 0-2l2-1.5-2-3.5-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.5a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.5L6.6 11a7.7 7.7 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.5a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5Z" />
+  </svg>
+);
+
 export default function Nav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const moreBtnRef = useRef<HTMLButtonElement>(null);
+  const settingsPopRef = useRef<HTMLDivElement>(null);
+  const settingsBtnRef = useRef<HTMLButtonElement>(null);
 
   const moreTabs = ALL_TABS.filter(([id]) => !PRIMARY.includes(id));
   const moreActive = moreTabs.some(([id]) => id === active);
@@ -126,6 +137,32 @@ export default function Nav({ active, onChange }: { active: Tab; onChange: (t: T
     return () => document.removeEventListener('keydown', onKey);
   }, [moreOpen]);
 
+  // Desktop settings popover: close on outside click or Escape.
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSettingsOpen(false);
+        settingsBtnRef.current?.focus();
+      }
+    };
+    const onClick = (e: MouseEvent) => {
+      if (
+        settingsPopRef.current &&
+        !settingsPopRef.current.contains(e.target as Node) &&
+        !settingsBtnRef.current?.contains(e.target as Node)
+      ) {
+        setSettingsOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onClick);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onClick);
+    };
+  }, [settingsOpen]);
+
   return (
     <>
       {/* Desktop / wide: horizontal tab bar */}
@@ -146,6 +183,23 @@ export default function Nav({ active, onChange }: { active: Tab; onChange: (t: T
           ))}
         </div>
         <div className="nav-fade" aria-hidden="true" />
+        <button
+          ref={settingsBtnRef}
+          type="button"
+          className="nav-settings-btn"
+          aria-haspopup="dialog"
+          aria-expanded={settingsOpen}
+          aria-label="Install & notification settings"
+          title="Install & notification settings"
+          onClick={() => setSettingsOpen((v) => !v)}
+        >
+          <span className="ic">{SETTINGS_ICON}</span>
+        </button>
+        {settingsOpen && (
+          <div className="nav-settings-pop" role="dialog" aria-modal="true" aria-label="Settings" ref={settingsPopRef}>
+            <InstallSettings />
+          </div>
+        )}
       </div>
 
       {/* Mobile: fixed bottom tab bar */}
@@ -199,6 +253,7 @@ export default function Nav({ active, onChange }: { active: Tab; onChange: (t: T
                 {label}
               </button>
             ))}
+            <InstallSettings />
           </div>
         </div>
       )}
