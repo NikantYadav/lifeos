@@ -48,3 +48,24 @@ export async function DELETE() {
     return NextResponse.json({ error: 'Could not remove subscription.' }, { status: 502 });
   }
 }
+
+/**
+ * Diagnostic only — reports whether a subscription is on file and which push
+ * service it targets, without echoing back the p256dh/auth secrets a full
+ * subscription carries.
+ */
+export async function GET() {
+  if (!redis) return unavailable();
+
+  const sub = await redis.get<StoredPushSubscription>(PUSH_SUB_KEY);
+  if (!sub) return NextResponse.json({ subscribed: false });
+
+  let endpointOrigin: string | null = null;
+  try {
+    endpointOrigin = new URL(sub.endpoint).origin;
+  } catch {
+    // leave null
+  }
+
+  return NextResponse.json({ subscribed: true, endpointOrigin });
+}
