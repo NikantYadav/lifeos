@@ -55,7 +55,11 @@ export default function SignIn() {
       if (isErrorWithCode(err) && err.code === statusCodes.IN_PROGRESS) {
         return;
       }
-      setError('Something went wrong signing in with Google. Please try again.');
+      // TEMP: surfacing the raw error for debugging — revert to a generic
+      // message once the Google sign-in flow is confirmed working.
+      console.log('Google sign-in error:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
+      const message = isErrorWithCode(err) ? `[${err.code}] ${err.message}` : String(err);
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
