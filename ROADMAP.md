@@ -132,8 +132,9 @@ tracker with an AI-shaped-but-hand-written field schema matching what
 
 ## 3. Phase 1 — Auth & backend API
 
-- **Supabase Auth**: email/password or magic link first, Google OAuth as a
-  fast-follow. Replaces `LIFEOS_PASSWORD` + `src/proxy.ts` entirely.
+- **Supabase Auth**: Google sign-in only (native `@react-native-google-signin/google-signin`
+  → `supabase.auth.signInWithIdToken`), no email/password or magic link.
+  Replaces `LIFEOS_PASSWORD` + `src/proxy.ts` entirely.
 - **Backend role for the Next.js app**: once the client is React Native, the
   Next.js app's job is to be the API layer for **every** data operation, not just
   the AI endpoints. **Locked decision (superseding an earlier draft of this
