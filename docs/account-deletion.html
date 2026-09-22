@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<!--
+  DRAFT: needs legal/contact-info review before production use.
+
+  This is a static, standalone HTML file — deliberately NOT a Next.js page
+  route in lifeos-backend, which was stripped to API-only by design (see the
+  lifeos-public-app-direction memory file's locked architecture decisions).
+  It exists to satisfy Google Play Console's requirement that an app
+  supporting account creation provide a PUBLIC WEB URL where a deletion
+  request can be made without installing the app, alongside the in-app
+  deletion path (Settings -> Delete Account, backed by
+  POST /api/account/delete in lifeos-backend).
+
+  This file still needs to be hosted at a stable public URL before Play
+  Store submission — that hosting decision (a static site host, a path on
+  a future marketing site, etc.) has not been made yet and is out of scope
+  for this file itself. The contact email below is a placeholder, matching
+  the [contact email] convention already used throughout docs/privacy-policy.md
+  and docs/terms-of-service.md — replace it with a real address before
+  publishing, not an agent-invented one.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Delete Your LifeOS Account</title>
+<style>
+  :root {
+    color-scheme: light dark;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 32px 20px 64px;
+    line-height: 1.55;
+    color: #1a1a1a;
+    background: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e8e8e8; background: #121212; }
+    .card { background: #1c1c1c; border-color: #333; }
+    a { color: #8ab4f8; }
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .subtitle { color: #666; margin-top: 0; margin-bottom: 2rem; }
+  @media (prefers-color-scheme: dark) { .subtitle { color: #999; } }
+  h2 { font-size: 1.1rem; margin-top: 2rem; }
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 1rem 0;
+    background: #fafafa;
+  }
+  .draft-banner {
+    background: #fff3cd;
+    color: #664d03;
+    border: 1px solid #ffe69c;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    .draft-banner { background: #3a2f00; color: #ffe69c; border-color: #5c4a00; }
+  }
+  code { font-size: 0.9em; }
+  ul { padding-left: 1.3rem; }
+</style>
+</head>
+<body>
+
+<div class="draft-banner">
+  DRAFT — this page's contact email and legal/company name are placeholders
+  and need a real decision before this is published or submitted to app
+  stores.
+</div>
+
+<h1>Delete Your LifeOS Account</h1>
+<p class="subtitle">How to permanently delete your LifeOS account and data.</p>
+
+<h2>Option 1: Delete in the app</h2>
+<div class="card">
+  <ol>
+    <li>Open the LifeOS app and sign in.</li>
+    <li>Go to <strong>Settings</strong>.</li>
+    <li>Tap <strong>Delete Account</strong> and confirm.</li>
+  </ol>
+  <p>This is immediate and permanent — there is no recovery period.</p>
+</div>
+
+<h2>Option 2: Request deletion without the app</h2>
+<div class="card">
+  <p>
+    If you no longer have the app installed, or can't sign in, email
+    <a href="mailto:[contact email]">[contact email]</a> from the email
+    address associated with your account and ask us to delete it. We will
+    verify the request and delete your account manually.
+  </p>
+</div>
+
+<h2>What gets deleted</h2>
+<p>
+  Deleting your account permanently removes your account and every piece of
+  data associated with it, including:
+</p>
+<ul>
+  <li>Your profile (email, display name, timezone)</li>
+  <li>Your plans, goals, schedule blocks, tasks, and habits</li>
+  <li>Your trackers and every logged tracker entry, including notes and miss reasons</li>
+  <li>Your onboarding chat transcript and any AI-generated proposals from it</li>
+  <li>Your AI check-in and weekly review history (narratives, suggested diffs, and your decisions on them)</li>
+  <li>Your subscription/trial status record</li>
+</ul>
+<p>
+  This is a real deletion, not a deactivation — your account row and every
+  table row referencing it are removed. There is currently no grace period
+  or "undo" once you confirm deletion in the app or a deletion request is
+  processed. See the
+  <a href="privacy-policy.md">Privacy Policy</a>, Section 8, for what
+  happens to data before deletion is requested (data retention).
+</p>
+
+<h2>How long it takes</h2>
+<p>
+  In-app deletion is immediate. A deletion request sent by email is
+  processed manually and may take a few days
+  <!-- TBD: state a real committed turnaround time once this is published -->.
+</p>
+
+<h2>Questions</h2>
+<p>
+  Contact <a href="mailto:[contact email]">[contact email]</a> with any
+  questions about this process or about our
+  <a href="privacy-policy.md">Privacy Policy</a>.
+</p>
+
+</body>
+</html>
