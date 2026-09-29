@@ -55,7 +55,7 @@ export default function Home() {
             onOpenPlan={openPlan}
           />
         )}
-        {tab === 'timetable' && <TimetablePanel schedule={state.schedule} dayOfWeek={dayOfWeek} now={now} />}
+        {tab === 'timetable' && <TimetablePanel schedule={state.schedule} dayOfWeek={dayOfWeek} now={now} curWeek={curWeek} />}
         {tab === 'plans' && (
           <PlansPanel plans={state.plans} openPlanId={openPlanId} onOpenPlanIdHandled={() => setOpenPlanId(null)} />
         )}

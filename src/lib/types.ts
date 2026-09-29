@@ -31,8 +31,11 @@ export interface WeightEntry {
   kg: number;
 }
 
-/** [time "HH:MM", title, note, isKeyBlock?, planId?] */
-export type SchedRow = [time: string, title: string, note: string, isKeyBlock?: number, planId?: string];
+/** Which of two alternating plan weeks a row runs in — see weekLetter(). */
+export type AltWeek = 'A' | 'B';
+
+/** [time "HH:MM", title, note, isKeyBlock?, planId?, week?] — no `week` means every week. */
+export type SchedRow = [time: string, title: string, note: string, isKeyBlock?: number, planId?: string, week?: AltWeek];
 
 /** Keyed by JS Date.getDay(), 0 = Sunday. */
 export type WeekSchedule = Record<number, [label: string, rows: SchedRow[]]>;

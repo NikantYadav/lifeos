@@ -12,7 +12,7 @@ import { AppState, newId } from './types';
 import { iso } from './dates';
 
 /** Bump when the seed shape in data.ts changes, to re-run migration once more. */
-export const CURRENT_SEED_VERSION = 6;
+export const CURRENT_SEED_VERSION = 9;
 
 /**
  * Titles removed from SEED_TASKS/SEED_HABITS after some deployments had
@@ -27,6 +27,27 @@ const REMOVED_HABIT_TITLES = new Set(['Barber']);
 
 /** Same idea as REMOVED_TASK_TITLES above, for the seedVersion 2 -> 3 step. */
 const REMOVED_TASK_TITLES_V3 = new Set(['Book four Tuesday Playo slots']);
+
+/** Plans whose `when` describes the timetable, re-synced on the seedVersion -> 9 step. */
+const SCHEDULE_WHEN_PLAN_IDS = ['social', 'approach', 'places', 'dating', 'gym', 'startup', 'speak', 'dj', 'russian', 'read', 'style'];
+
+/**
+ * [check key, old seed sub-label] pairs rewritten on the seedVersion -> 9
+ * step, only if still untouched. Includes the labels seedVersions 7 and 8
+ * shipped, since this step supersedes both.
+ */
+const OLD_CHECK_SUBS_V9: [string, string][] = [
+  ['out', 'Mon, Tue, Thu, Fri, Sat'], ['out', 'Mon, Tue, Fri, Sat, Sun'],
+  ['russian', ''],
+  ['startup', 'Before 11am'], ['startup', 'Wed evening, Sat'],
+];
+
+/** Goals from earlier seeds, replaced only if the user never changed them. */
+const OLD_HOURS_GOALS = new Set([13, 10, 5]);
+const OLD_OUT_GOALS = new Set([5]);
+
+/** Startup `how` line that stopped being true once mornings became wake-and-go. */
+const REMOVED_STARTUP_HOW = 'Nothing gets scheduled before 11am. That is the wall.';
 
 /**
  * Copies data.ts seed defaults into state fields that are still empty, then
@@ -106,6 +127,40 @@ export function migrateState(state: AppState): AppState {
           ? { ...h, title: 'Self-timer photos — 30 solo shots on a timer, practicing poses' }
           : h
       );
+  }
+
+  /**
+   * Office every weekday (out the door 09:00, home ~17:15), 8 hours of
+   * sleep, and a lighter week: one effortful thing per evening, badminton
+   * and run club dropped, and some slots alternating week A/B in pairs.
+   * Supersedes seedVersions 7 and 8, earlier cuts of this same week. Schedule is replaced outright as in the
+   * steps above. Each touched plan's `when` (and the gym's `where`, which
+   * described the old Tue/Wed off-peak trip) is replaced from the seed since
+   * it only ever restates the timetable — `how`/`aim`/milestones, where
+   * review edits land, are left alone — except the one startup `how` line
+   * the new mornings made false. Startup drops 13.5 -> 7 hours a week and
+   * nights out 5 -> 4, so those goals follow, but only if still an old
+   * seed value.
+   */
+  if (state.seedVersion < 9) {
+    seeded.schedule = structuredClone(SEED_SCHEDULE);
+    const seedById = new Map(SEED_PLANS.map((p) => [p.id, p]));
+    seeded.plans = seeded.plans.map((p) => {
+      const seed = seedById.get(p.id);
+      if (!seed || !SCHEDULE_WHEN_PLAN_IDS.includes(p.id)) return p;
+      const next = { ...p, when: structuredClone(seed.when) };
+      if (p.id === 'gym') next.where = structuredClone(seed.where);
+      if (p.id === 'startup' && p.how) next.how = p.how.filter((h) => h !== REMOVED_STARTUP_HOW);
+      return next;
+    });
+    const seedChecks = new Map(SEED_CHECKS.map((c) => [c[0], c]));
+    seeded.checks = seeded.checks.map((c) =>
+      OLD_CHECK_SUBS_V9.some(([k, sub]) => c[0] === k && c[2] === sub) ? [c[0], c[1], seedChecks.get(c[0])![2]] : c
+    );
+    const goals = { ...seeded.weekGoals };
+    if (OLD_HOURS_GOALS.has(goals.hours)) goals.hours = SEED_WEEK_GOALS.hours;
+    if (OLD_OUT_GOALS.has(goals.out)) goals.out = SEED_WEEK_GOALS.out;
+    seeded.weekGoals = goals;
   }
 
   return seeded;

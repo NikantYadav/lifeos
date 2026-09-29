@@ -11,133 +11,122 @@ export const DAYNAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
  * read state.plans/state.schedule/etc., not these).
  */
 /**
- * Nightly wind-down stack, appended (in this order) before Sleep on every day
- * that has room for it. Each is its own key block so it shows up as its own
- * toggleable item in the Today activity list — see TodayPanel.
+ * The week is built around energy, not coverage: every weekday has the same
+ * office-day spine, a protected hour to land after getting home, at most one
+ * effortful thing in the evening, 8 hours of sleep (00:30–08:30), and a short
+ * fixed bedtime. Small daily items ride on things already happening
+ * (neck/posture as the gym cooldown, kegels on the bus home, Russian on the bus
+ * in). Startup gets two long weekday evenings plus a Saturday block — fewer,
+ * longer blocks rather than a daily sliver. Rows tagged 'A'/'B' alternate by
+ * plan week and always come in pairs on the same slot, so no slot sits empty
+ * on the off week.
  */
-const NECK_ROW: SchedRow = ['22:35', 'Neck exercises — 5 min', 'Isometrics, sideways stretches, chin tucks', 1, 'neck'];
-const POSTURE_ROW: SchedRow = ['22:40', 'Posture — 5 min', 'Wall angels, doorway chest stretch, prone Y-raise', 1, 'posture'];
-const SEXUAL_HEALTH_ROW: SchedRow = ['22:45', 'Kegels + reverse kegel — 5 min', '', 1, 'sexual-health'];
-const JOURNAL_ROW: SchedRow = ['22:50', 'Journal — 10 min', 'Write it down before the day is gone', 1, 'journal'];
-/** Mon and Thu only, per the dating plan's `when` — after the wind-down stack, still before Sleep. */
-const PHOTO_DRILL_ROW: SchedRow = ['22:55', 'Photo drill — 10 min', 'Mirror. Five positions cold — weight on back foot, three-quarter turn, walking shot, leaning, candid laugh.', 1, 'dating'];
+const NECK_ROW = (t: string): SchedRow => [t, 'Neck exercises — 5 min', 'Isometrics, sideways stretches, chin tucks', 1, 'neck'];
+const POSTURE_ROW = (t: string): SchedRow => [t, 'Posture — 5 min', 'Wall angels, doorway chest stretch, prone Y-raise', 1, 'posture'];
+const KEGEL_ROW = (t: string): SchedRow => [t, 'Kegels + reverse kegel — 5 min', '', 1, 'sexual-health'];
+const JOURNAL_ROW = (t: string, note = 'Write it down before the day is gone'): SchedRow => [t, 'Journal — 10 min', note, 1, 'journal'];
+const IMPROMPTU_ROW = (t: string): SchedRow => [t, 'Impromptu / Dictio — 10 min', 'Record it — that is tonight’s voice note too.', 1, 'speak'];
+
+/** Mon–Fri, wake to getting home. Office every day, gym at the office before the bus back. */
+function officeDay(workout: string): SchedRow[] {
+  return [
+    ['08:30', 'Wake', 'Phone stays across the room'],
+    ['08:35', 'Shower, breakfast', '6 eggs, boiled last night. Bag is already packed.'],
+    ['09:00', 'Bus in — Russian, then read', 'Anki 20 min, then the book for the rest of the ride.', 1, 'russian'],
+    ['09:45', 'Job work + lunch', ''],
+    ['15:00', 'Shoulder rehab — 5–8 min', 'Band external rotations, light scaption raises. Before the lift, low load.', 1, 'shoulder'],
+    ['15:10', 'Gym — 70 min', `${workout}, plus shrugs and face pulls. Top of the range, then leave — no junk sets.`, 1, 'gym'],
+    NECK_ROW('16:20'),
+    POSTURE_ROW('16:25'),
+    ['16:35', 'Bus home — kegels, then switch off', 'Kegels 3 sets of 10–15 on the bus. Then music, a podcast, or the book. No work email.', 1, 'sexual-health'],
+    ['17:15', 'Land — 1h, nothing scheduled', 'Shower, protein, lie down. No plans, no catching up. This hour is what makes the evening worth having.'],
+  ];
+}
+
+/** Weekday startup evening: one long block, then the night is yours. */
+const STARTUP_EVENING: SchedRow[] = [
+  ['18:15', 'Startup — 2h', 'Your room, your monitor, phone in a drawer. One written sentence first: what is done by 20:15. Stop on time.', 1, 'startup'],
+  ['20:15', 'Dinner', ''],
+  ['21:00', 'Free', 'Nothing on purpose. Laptop closed.', 1],
+];
+
+/** Every night: same close so it runs on autopilot. Sleep 00:30–08:30. */
+const BEDTIME: SchedRow[] = [
+  ['23:30', 'Prep tomorrow — 10 min', 'Boil the eggs, pack the gym bag, lay out clothes. This is what makes a 30-minute morning work.'],
+  JOURNAL_ROW('23:45'),
+  ['00:00', 'Read in bed', 'Book only, phone across the room. Reverse kegel as you settle.'],
+  ['00:30', 'Sleep', '8 hours.'],
+];
 
 export const SEED_SCHEDULE: WeekSchedule = {
-  1: ['Monday — office. Chest, biceps.', [
-    ['07:30', 'Wake', 'Phone stays across the room'],
-    ['07:45', 'Walk', 'Same route, same juice stall, same time.'],
-    ['08:15', 'Breakfast, 6 eggs, shower', ''],
-    ['08:45', 'Startup — 1.5h', 'Your room, your monitor, phone in a drawer', 1, 'startup'],
-    ['10:15', 'Bus to Kadubeesanahalli', 'Read on the bus', undefined, 'read'],
-    ['11:00', 'Job work + lunch', ''],
-    ['15:00', 'Shoulder rehab — 5–8 min', 'Band external rotations, light scaption raises. Before the lift, low load.', 1, 'shoulder'],
-    ['15:15', 'Gym — 90 min', 'Chest, biceps, plus shrugs and face pulls. Fresh t-shirt after. Shower at home.', 1, 'gym'],
-    ['17:00', 'Bus home', ''],
-    ['17:50', 'Shower, protein', ''],
-    ['18:30', 'Your café — 2h', "Same table, same time. Read + 2 conversations + 1 approach. Learn the staff's names.", 1, 'places'],
-    ['20:30', 'Dinner', ''],
-    ['21:30', 'Russian — 20 min', '', undefined, 'russian'],
-    ['22:00', 'Read', '', undefined, 'read'],
-    ['22:20', 'Impromptu / Dictio — 10 min', 'Articulation and dictation practice', 1, 'speak'],
-    NECK_ROW, POSTURE_ROW, SEXUAL_HEALTH_ROW, JOURNAL_ROW, PHOTO_DRILL_ROW,
-    ['23:00', 'Sleep', ''],
+  1: ['Monday — office. Chest, biceps. Café night.', [
+    ...officeDay('Chest, biceps'),
+    ['18:30', 'Your café — 90 min', "Same table, same time. Read + 2 conversations + 1 approach. Learn the staff's names.", 1, 'places', 'A'],
+    ['18:30', 'New place — 90 min', 'A café you have never been to, or a Zone A meetup. Quiet nights are when the staff have time to talk.', 1, 'places', 'B'],
+    ['20:15', 'Dinner', ''],
+    IMPROMPTU_ROW('21:30'),
+    ['21:45', 'Free', 'Anything or nothing.'],
+    ...BEDTIME,
   ]],
-  2: ['Tuesday — WFH + gym trip. Back, triceps.', [
-    ['07:45', 'Wake', ''],
-    ['08:00', 'Walk', ''],
-    ['08:30', 'Startup — 3h', 'Best block of your week', 1, 'startup'],
-    ['11:30', 'Food, job work at PG', ''],
-    ['13:00', 'Bus to office', 'Off-peak. 20–25 min instead of 45.'],
-    ['13:45', 'Job work at office', ''],
-    ['15:00', 'Shoulder rehab — 5–8 min', 'Band external rotations, light scaption raises. Before the lift, low load.', 1, 'shoulder'],
-    ['15:15', 'Gym — 90 min', 'Back, triceps, plus shrugs and face pulls.', 1, 'gym'],
-    ['16:50', 'Bus home', ''],
-    ['17:20', 'Shower, protein', ''],
-    ['18:30', 'Badminton — 90 min', 'Machaxi Scooled, AECS Layout. Solo slot on Playo. Same slot every week.', 1, 'social'],
-    ['20:00', 'Stay back 20 min', 'Never leave straight after. This is where the group chat comes from.', 1, 'social'],
-    ['20:30', 'Dinner', ''],
-    ['21:30', 'DJ — 45 min', '', undefined, 'dj'],
-    ['22:20', 'Impromptu / Dictio — 10 min', 'Articulation and dictation practice', 1, 'speak'],
-    NECK_ROW, POSTURE_ROW, SEXUAL_HEALTH_ROW, JOURNAL_ROW,
-    ['23:00', 'Sleep', ''],
+  2: ['Tuesday — office. Back, triceps. Startup evening.', [
+    ...officeDay('Back, triceps'),
+    ...STARTUP_EVENING,
+    ...BEDTIME,
   ]],
-  3: ['Wednesday — WFH + gym trip. Shoulders, legs.', [
-    ['07:45', 'Wake', ''],
-    ['08:00', 'Walk', ''],
-    ['08:30', 'Startup — 3h', '', 1, 'startup'],
-    ['11:30', 'Food, job work at PG', ''],
-    ['13:00', 'Bus to office', ''],
-    ['13:45', 'Job work at office', ''],
-    ['15:00', 'Shoulder rehab — 5–8 min', 'Band external rotations, light scaption raises. Before the lift, low load.', 1, 'shoulder'],
-    ['15:15', 'Gym — 90 min', 'Shoulders, legs, plus shrugs and face pulls.', 1, 'gym'],
-    ['16:50', 'Bus home', ''],
-    ['17:20', 'Shower', ''],
-    ['18:00', 'DJ — 1h', '', undefined, 'dj'],
-    ['19:00', 'Write one story', 'Rework one thing that happened to you into 90 seconds', 1, 'speak'],
-    ['19:30', 'Dinner', ''],
-    ['20:30', 'Russian, reading', 'Your one full rest evening. Stay in.', 1, 'russian'],
-    ['22:20', 'Impromptu / Dictio — 10 min', 'Articulation and dictation practice', 1, 'speak'],
-    NECK_ROW, POSTURE_ROW, SEXUAL_HEALTH_ROW, JOURNAL_ROW,
-    ['23:00', 'Sleep', ''],
+  3: ['Wednesday — office. Shoulders, legs. DJ or errands.', [
+    ...officeDay('Shoulders, legs'),
+    ['18:30', 'DJ — 90 min', 'Headphones on. Play for fun — the one block in the week with no target.', 1, 'dj', 'A'],
+    ['18:30', 'Errands + grooming — 90 min', 'Barber (every third week), tailor, one item off the clothes list, whatever has been piling up.', 1, 'style', 'B'],
+    ['20:15', 'Dinner', ''],
+    IMPROMPTU_ROW('21:30'),
+    ['21:45', 'Free', 'Stay in. Call someone, watch something.'],
+    ...BEDTIME,
   ]],
-  4: ['Thursday — office. Chest, biceps.', [
-    ['07:30', 'Wake', ''],
-    ['07:45', 'Walk', ''],
-    ['08:45', 'Startup — 1.5h', '', 1, 'startup'],
-    ['10:15', 'Bus to office', ''],
-    ['11:00', 'Job work + lunch', ''],
-    ['15:00', 'Shoulder rehab — 5–8 min', 'Band external rotations, light scaption raises. Before the lift, low load.', 1, 'shoulder'],
-    ['15:15', 'Gym — 90 min', 'Chest, biceps, plus shrugs and face pulls.', 1, 'gym'],
-    ['17:00', 'Bus home', ''],
-    ['17:50', 'Shower, protein', ''],
-    ['18:30', 'New room — 2h', 'Second Playo slot, a Zone A meetup, or a new café on a quiet night so you can talk to the staff.', 1, 'places'],
-    ['20:30', 'Dinner', ''],
-    ['21:30', 'Russian', '', undefined, 'russian'],
-    ['22:20', 'Impromptu / Dictio — 10 min', 'Articulation and dictation practice', 1, 'speak'],
-    NECK_ROW, POSTURE_ROW, SEXUAL_HEALTH_ROW, JOURNAL_ROW, PHOTO_DRILL_ROW,
-    ['23:00', 'Sleep', ''],
+  4: ['Thursday — office. Chest, biceps. Startup evening.', [
+    ...officeDay('Chest, biceps'),
+    ...STARTUP_EVENING,
+    ...BEDTIME,
   ]],
-  5: ['Friday — office. Back, triceps, shoulders.', [
-    ['07:30', 'Wake', ''],
-    ['07:45', 'Walk', ''],
-    ['08:45', 'Startup — 1.5h', '', 1, 'startup'],
-    ['10:15', 'Bus to office', ''],
-    ['11:00', 'Job work + lunch', ''],
-    ['15:00', 'Shoulder rehab — 5–8 min', 'Band external rotations, light scaption raises. Before the lift, low load.', 1, 'shoulder'],
-    ['15:15', 'Gym — 90 min', 'Back, triceps, shoulders, plus shrugs and face pulls.', 1, 'gym'],
-    ['17:00', 'Bus home', ''],
-    ['17:50', 'Shower, best outfit of the week', ''],
-    ['18:15', 'Neck exercises — 5 min', 'Isometrics, sideways stretches, chin tucks — done early since tonight runs late', 1, 'neck'],
-    ['18:20', 'Posture — 5 min', 'Wall angels, doorway chest stretch, prone Y-raise', 1, 'posture'],
-    ['18:25', 'Kegels + reverse kegel — 5 min', '', 1, 'sexual-health'],
-    ['18:30', 'Journal — 10 min', 'Write yesterday and today down before you head out', 1, 'journal'],
-    ['20:00', 'Out', 'You make the plan and you make the group chat, even if it is four people. Take photos of everyone.', 1, 'social'],
-    ['02:00', 'Home', ''],
+  5: ['Friday — office. Back, triceps, shoulders. Out.', [
+    ...officeDay('Back, triceps, shoulders'),
+    ['18:30', 'Shower, best outfit of the week', 'Take a 20-min nap first if the week took it out of you.'],
+    JOURNAL_ROW('19:15', 'Write today down before you head out'),
+    ['20:00', 'Out', 'You make the plan and you make the group chat, even if it is four people. Take photos of everyone. Leave while it is still good.', 1, 'social'],
+    ['00:30', 'Home', 'Home by 00:30. Saturday is worth more than the last hour.'],
+    ['01:00', 'Sleep', '8 hours — wake at 09:00.'],
   ]],
-  6: ['Saturday.', [
-    ['09:30', 'Wake', 'You were out. No early run.'],
-    ['11:00', 'Free — 4h', 'Errands, reading, whatever the week did not leave room for.', 1],
-    ['15:00', 'Lunch somewhere new', 'Bring the book if you are solo'],
+  6: ['Saturday — build block, swim, friends.', [
+    ['09:00', 'Wake', 'Slow breakfast.'],
+    NECK_ROW('09:45'),
+    POSTURE_ROW('09:50'),
+    ['10:30', 'Startup — 3h', 'The long block of the week. One sentence first: what ships by 13:30.', 1, 'startup'],
+    ['13:30', 'Lunch somewhere new', 'Bring the book if you are solo'],
+    ['15:00', 'Free', 'Errands, nap, whatever the week did not leave room for.', 1],
     ['16:00', 'Swimming — 90 min', 'Machaxi Nadando, Varthur. From week 5.', 1, 'swim'],
-    ['19:00', 'Social', "Your group, someone's place, a Koramangala startup thing twice a month", 1, 'social'],
-    ['22:30', 'Neck exercises — 5 min', 'Isometrics, sideways stretches, chin tucks', 1, 'neck'],
-    ['22:35', 'Posture — 5 min', 'Wall angels, doorway chest stretch, prone Y-raise', 1, 'posture'],
-    ['22:40', 'Kegels + reverse kegel — 5 min', '', 1, 'sexual-health'],
-    ['22:45', 'Journal — 10 min', 'Write it down before the day is gone', 1, 'journal'],
-    ['23:30', 'Home', ''],
+    ['17:30', 'Rest', ''],
+    KEGEL_ROW('18:30'),
+    ['18:45', 'Photo drill — 10 min', 'Mirror. Five positions cold — weight on back foot, three-quarter turn, walking shot, leaning, candid laugh. You are dressed anyway.', 1, 'dating'],
+    ['19:30', 'Social', "Your group, someone's place, a Koramangala startup thing twice a month", 1, 'social'],
+    JOURNAL_ROW('00:00', 'Home. Five lines, then bed.'),
+    ['00:30', 'Sleep', '8 hours.'],
   ]],
-  0: ['Sunday — run, rest, plan.', [
-    ['07:00', 'Wake', ''],
-    ['07:30', 'Run club — 5K', 'Whitefield Run Club. RSVP the night before.', 1, 'places'],
-    ['08:45', 'Coffee after the run', 'Never run and leave. 2 conversations + 1 approach. Find the organiser and talk to them.', 1, 'places'],
-    ['10:00', 'Groceries', '2 trays eggs, whey, curd, peanut butter, oats, bananas', undefined, 'food'],
-    ['11:00', 'Laundry, admin', ''],
-    ['12:00', 'Nothing', 'Prescribed. Movie, nap, scroll if you want.', 1],
-    ['17:00', 'Startup — 3h', '', 1, 'startup'],
-    ['20:00', 'Book next week', 'Playo slots, run club RSVP, one invite sent', 1, 'social'],
-    ['21:00', 'Dinner, read', ''],
-    ['22:20', 'Impromptu / Dictio — 10 min', 'Articulation and dictation practice', 1, 'speak'],
-    NECK_ROW, POSTURE_ROW, SEXUAL_HEALTH_ROW, JOURNAL_ROW,
+  0: ['Sunday — rest and reset. No work.', [
+    ['08:30', 'Wake', 'No alarm pressure.'],
+    ['10:00', 'Brunch with someone', 'Invite someone from Friday or Saturday. You make the plan.', 1, 'social', 'A'],
+    ['10:00', 'Slow café morning', 'Book, coffee, phone away. Talk to whoever is next to you if it happens.', 1, 'read', 'B'],
+    ['11:30', 'Groceries', '2 trays eggs, whey, curd, peanut butter, oats, bananas', undefined, 'food'],
+    ['12:15', 'Laundry, admin', ''],
+    ['13:00', 'Nothing', 'Prescribed. Movie, nap, scroll if you want.', 1],
+    ['17:00', 'Book next week — 30 min', 'Friday plan, Saturday plan, one invite sent', 1],
+    ['17:30', 'Russian tutor call — 45 min', 'italki from week 6. Before that, 30 min of the course — speaking out loud.', 1, 'russian', 'A'],
+    ['17:30', 'Write one story — 30 min', 'Rework one thing that happened into 90 seconds: setup, tension, turn, last line.', 1, 'speak', 'B'],
+    ['18:15', 'Free', ''],
+    ['20:00', 'Dinner', ''],
+    NECK_ROW('21:30'),
+    POSTURE_ROW('21:35'),
+    KEGEL_ROW('21:40'),
+    ['21:45', 'Free', ''],
+    ...BEDTIME,
   ]],
 };
 
@@ -168,14 +157,14 @@ export const SEED_PLANS: Plan[] = [
     warn: 'Where the case study does not transfer: he was in an expat scene where everyone was new, alone and actively hunting for friends, and he had six years of practice plus an Instagram following. Bangalore is a settled city — most people already have their circle. Same tactics, slower results. His 60 days is your six months. Do not read his timeline as your benchmark.' },
 
   { id: 'social', name: 'Social circle', aim: 'From nobody to 3–4 close friends and 2–3 groups by March.',
-    when: ['Tue 18:30 badminton — the main one', 'Thu 18:30 second room', 'Sun 08:45 coffee after the run', 'Sat 19:00 social', 'Mon 18:30 café'],
+    when: ['Mon 18:30 café — your regular one week, a new place the next', 'Fri 20:00 out — home by 00:30', 'Sat 19:30 social', 'Sun 10:00 brunch with someone, every other week'],
     where: ['Machaxi Scooled Badminton, AECS Layout (0.2 km) — solo slots on Playo, ₹150–350', 'PlayTM Sports Arena Marathahalli · Sporthood Doddanekundi · Gamezy Shuttle Hub Munnekolala · iSports Arena Kundalahalli Gate', 'Whitefield Run Club — weekend mornings, 3K plus games', 'Whitefield Reads — Saturdays, free', 'One café in Marathahalli you go to every Monday'],
     how: ['Book the SAME Playo slot four weeks running. Same regulars come back. That is the trick.', 'Week 4, ask straight out: "Do you all have a group? Add me, I am here every Tuesday."', '<b>Find the organiser.</b> At the run club, the court, the meetup — talk to whoever runs it. One person who knows fifty people is worth fifty people.', 'Exchange Instagram, not numbers.', '<b>The camera trick.</b> Take good photos of people on your phone at anything social. Show them the shot. They will want it — "give me your Instagram, I will send it." You get the handle, they get something they actually wanted, and you get reps at photography for your own photos later. Free, and it works every single time.', 'Follow up inside 48 hours with something in it: the photo, a link, the city guide, a booking.', 'Third time you see someone, make it a group of 3–4 and bring someone from a different context.', 'Start the WhatsApp group yourself. Name it for the activity — "Tuesday Badminton" — not the people. You post the booking link each week. That is the whole job, and it makes you the hub.', 'After any activity with new people, bundle them into a chat the same night. Activity chat becomes a friend chat within a month.'],
     quota: ['5 new conversations', '2 Instagram exchanges', '1 invite sent', '1 follow-up message'],
     milestones: [[6, '12 acquaintances, 4 people you text, in 1 group chat'], [12, '2 groups, 1 you run, 8 you text'], [18, 'First party at your flat'], [24, '25–35 acquaintances, 10–12 you text, 3–4 close']] },
 
   { id: 'approach', name: 'Cold approach', aim: '80–100 approaches by March. The number you control is approaches made, not outcomes.',
-    when: ['Every day — Level 0: 3 conversations with anyone', 'Mon 18:30–20:30 café — 1', 'Sun 08:45 post-run coffee — 1', 'Sat afternoon — Zone B — 1–2', 'Fri night — free-form'],
+    when: ['Every day — Level 0: 3 conversations with anyone', 'Mon 18:30–20:00 café — 1', 'Sun café morning, every other week — 1 if it happens', 'Fri and Sat nights — free-form'],
     where: ['Cafés with shared seating in Marathahalli and Brookefield', 'Post-run coffee on Sunday — best context you have', 'Bookshops, Whitefield Reads gathering at the end, meetups, house parties', 'Metro to Indiranagar on a Saturday — Church Street, cafés, bookshops'],
     how: ['<b>Level 0, from today.</b> 3 unnecessary conversations a day with anyone. Zero stakes, builds the muscle.', '<b>Level 1, week 3.</b> 2 a week. No intent signal. Leave inside a minute.', '<b>Level 2, week 6.</b> 3–5 a week. Three or four minutes. One real point of interest. Leave before it dies.', '<b>Level 3, week 10.</b> Ask for Instagram when there is signal — she asks things back, the conversation restarts itself, her body is turned toward you.', '<b>Level 4, week 14.</b> Convert to a first meet. Short, cheap, daytime.', '<b>Reframe the nerves.</b> Same physical feeling as excitement. You are offering someone two minutes of conversation, not demanding anything. Assume every stranger is a friend you have not met yet — until they show you otherwise.', 'Open on the situation, not on her. "Is that book any good?"', 'Say why you came over inside 20 seconds. Ambiguity is what makes it uncomfortable, not directness.', 'Plan to leave in three minutes.', 'Three seconds. Move before the debate starts — the debate never says go.', 'First one in the first 20 minutes of being out. The first one is a tax.', 'The camera trick works here too, but only where photos are normal — a party, an event, a group thing. Not at a café with a stranger.', 'Log it the same day. One line on what to change.'],
     good: 'Take the first no, warmly, straight away. Short answers, body turned away, phone picked up, headphones back in, nothing asked in return. Two of those, say nice to meet you, and go. The man who leaves cleanly never becomes a story.',
@@ -183,20 +172,20 @@ export const SEED_PLANS: Plan[] = [
     milestones: [[5, 'Level 1 running'], [10, 'Level 2, 30 logged'], [14, 'First Instagram from a cold approach'], [24, '80–100 logged, 8–10 handles, 3–4 dates']] },
 
   { id: 'places', name: 'Third spaces and connectors', aim: 'Three places in Bangalore where they know your name.',
-    when: ['Mon 18:30 — your café', 'Tue 18:30 — your court', 'Sun 07:30 — your run club', 'Thu — trying new places on quiet nights'],
+    when: ['Mon 18:30 — your café (week A) / a new place (week B)', 'Sat lunch — somewhere new each week'],
     where: ['One café in Marathahalli or Brookefield. Pick it in week 1 and commit.', 'One badminton venue. Same one.', 'One run club.'],
     how: ['<b>Pick one café and go every Monday.</b> Same table, same time. By week four the staff know your order. By week eight they know your name. That is a third space — somewhere away from home that feels like home, and somewhere you can bring people.', "<b>Learn the staff's names.</b> The barista, the court manager, the juice stall guy, the guy at the gym desk. Costs nothing, changes how it feels to walk in.", '<b>Befriend the manager.</b> Of your café, your court, wherever you end up regularly. It gets you slots when they are full, and it looks good when you bring people.', '<b>Go to new places on quiet nights.</b> Thursday, not Saturday. On a dead night you can actually talk to the staff and the owner. On a busy night you are one of two hundred.', '<b>Connectors are worth fifty people.</b> Run club organisers, whoever runs the badminton group, the person who hosts things. Make a point of talking to them. Offer to help. Raise your hand.', "<b>Build a Bangalore guide.</b> A Google Maps list of your actual favourite spots — cafés, food, courts, weekend trips. Two reasons it is worth it: anyone new in the city wants it, and it gives you something to give away, which is the easiest reason in the world to ask for someone's Instagram and the easiest 48-hour follow-up you will ever send."],
     milestones: [[4, 'Café picked, staff recognise you'], [8, 'Guide has 25 places on it'], [16, 'You are on first-name terms at three places']] },
 
   { id: 'dating', name: 'Dating and photos', aim: 'Real photos by late January, dating live for the last six weeks.',
-    when: ['Photo drill: 10 min, twice a week, Mon and Thu before bed', 'Self-timer set: once a month — prop the phone on a timer, 30 solo shots practicing the five positions, keep your best 3', 'Real shoot: week 19, a Saturday'],
+    when: ['Photo drill: 10 min, Sat before going out', 'Self-timer set: once a month — prop the phone on a timer, 30 solo shots practicing the five positions, keep your best 3', 'Real shoot: week 19, a Saturday'],
     where: ['Mirror in your room for the drill', 'Shoot: three spots on a Saturday evening, golden hour, a friend with a phone'],
     how: ['Five positions to learn cold: weight on back foot with hands doing something · three-quarter turn · walking shot · leaning with one limb bent · candid laugh.', 'Never square-on with arms hanging. Always bend something. Chin forward and down. Look away in one shot of three.', 'Shoot from chest height. Low angles make tall people loom.', 'Once a month: 30 self-timer shots, pick 3, write down what was different.', 'Week 2: baseline set. It will be bad. It is your before, and it gets you on the apps now.', 'Week 19: the real set. 200 shots, keep six — clear face · full body · doing something · with 1–2 friends · a place with character · something with personality.', 'Your camera habit is quietly solving this. By January you will have months of real photos of yourself doing interesting things, which beats any posed shoot.'],
     milestones: [[2, 'Baseline photos, apps live'], [19, 'Real set shot, profiles rebuilt'], [24, 'Dating on good photos']] },
 
   { id: 'gym', name: 'Gym', aim: '80 kg to about 86 kg, roughly 4–6 kg of it muscle.',
-    when: ['Mon, Thu, Fri — 15:30–17:00 at the office, last thing before the bus', 'Tue, Wed — 15:15–16:45, off-peak trip to the office'],
-    where: ['Office gym only. City bus both ways, individual tickets, about ₹15–25 a trip.', 'Tue and Wed: leave the PG at 13:00. Off-peak the run is 20–25 minutes instead of 45. Job work at the office 13:45–15:15, lift, leave 16:50 before the crush.'],
+    when: ['Mon–Fri — 15:00–16:30 at the office: rehab, 70-min lift, neck + posture as the cooldown', 'Bus home 16:35, home by about 17:15'],
+    where: ['Office gym only. City bus both ways, individual tickets, about ₹15–25 a trip.'],
     how: ['Five days, Monday to Friday. Weekend off. The Sunday run is the only extra.', '<b>The split:</b> Mon chest + biceps · Tue back + triceps · Wed shoulders + legs · Thu chest + biceps · Fri back + triceps + shoulders. Full exercise list is in the Body tab.', 'Every session, every day, on top of the split: shrugs and face pulls.', '<b>Right-shoulder rehab.</b> You have a cyst/tendonitis there. Before the lift, as a warm-up: 5–8 minutes of band external rotations and light scaption raises, low load. Doing it before rather than after primes the joint before it takes the day\'s pressing and pulling load, rather than adding more work to an already-fatigued shoulder. If it ever aggravates the shoulder, move it to after the session instead — this is a reasoned default, not a fixed rule.', 'One rule: top of the rep range on every set, add 2.5 kg next time.', 'Log every set. Untracked training is why people lift for six months and look the same.', 'Spare t-shirt and wipes in the bag. Change after, shower at home.'],
     warn: 'Five days from tomorrow with no ramp. The first ten days will be rough. Start at the bottom of every rep range and let the weight climb — do not add extra volume in week one. Keep the shoulder rehab light — it is maintenance, not a second workout.',
     milestones: [[4, 'Every session logged, shoulder rehab a habit'], [12, '82–83 kg, lifts up'], [24, '~86 kg, visibly different']] },
@@ -208,9 +197,9 @@ export const SEED_PLANS: Plan[] = [
     milestones: [[4, 'Protein hit 6 days a week'], [24, 'Runs without thinking']] },
 
   { id: 'startup', name: 'Startup', aim: 'MVP live by 15 December. Real users by March.',
-    when: ['Mon, Thu, Fri 08:45–10:15', 'Tue, Wed 08:30–11:30', 'Sun 17:00–20:00', '13.5 hours a week'],
+    when: ['Tue 18:15–20:15', 'Thu 18:15–20:15', 'Sat 10:30–13:30', '7 hours a week. Sunday is off.'],
     where: ['Your PG room, at the monitor. Not cafés.'],
-    how: ['Nothing gets scheduled before 11am. That is the wall.', 'Every block starts with one written sentence: what is done by the end of it.', 'Phone in a drawer. Not face down.', 'Ship dates, not effort targets. MVP by 15 December.', 'Saturday startup meetups in Koramangala twice a month are distribution, not networking. Go with a 10-second description and watch faces.', 'Treat the founders you meet as equals. The second you fanboy, you start performing, and that is what ruins the connection.', 'First Sunday monthly: what shipped, what is blocked, is the date still real. Slipped twice means cut scope.'],
+    how: ['Every block starts with one written sentence: what is done by the end of it.', 'Phone in a drawer. Not face down.', 'Ship dates, not effort targets. MVP by 15 December.', 'Saturday startup meetups in Koramangala twice a month are distribution, not networking. Go with a 10-second description and watch faces.', 'Treat the founders you meet as equals. The second you fanboy, you start performing, and that is what ruins the connection.', 'First Sunday monthly: what shipped, what is blocked, is the date still real. Slipped twice means cut scope.'],
     warn: 'Leaving the job by March does not work on the money. Five months of saving is about ₹2.35 lakh — under five months of runway. Make the trigger a condition, not a date: 9 months of runway plus real user signal. March should be MVP live, first users, decision made.',
     milestones: [[12, 'MVP shipped'], [18, 'First users who are not friends'], [24, 'Quit analysis done']] },
 
@@ -244,26 +233,26 @@ export const SEED_PLANS: Plan[] = [
     milestones: [[4, 'Kegels are a stacked daily habit, no reminder needed'], [12, 'Stop-start does not feel clinical; sensate focus sessions feel calm, not like a task'], [24, 'Full, honest review — erection quality, stamina, and anxiety, compared to week 1']] },
 
   { id: 'speak', name: 'Talking and stories', aim: 'Never run out of things to say. Ten stories you can tell well.',
-    when: ['3 conversations a day, built into the walk, the bus, the gym, the café', '5-minute voice note every night', 'Impromptu / Dictio — 10 min, every night', 'Wed 19:00 — write one story'],
+    when: ['3 conversations a day, built into the walk, the bus, the gym, the café', '5-minute voice note every night', 'Impromptu / Dictio — 10 min, Mon and Wed', 'Sun 17:30 — write one story, every other week'],
     where: ['Everywhere. Needs no venue, which is why it is the cheapest win on the list.'],
     how: ['<b>Running out of things to say</b> is a hook problem. Every answer has 2–3 hooks. "Moved from Pune last year for work" gives you Pune, moving, work, timing. Pick one and go deeper, or match it with something of your own. Name the hook in your head for two weeks and it goes automatic.', '<b>Awkward pauses</b> are a volume problem. Three conversations a day. After about 300 the first twenty seconds stops feeling like a cliff.', '<b>Boring stories</b> are structure, not material. Write ten things that happened to you. Rework each into 90 seconds: setup, tension, turn, and a line to finish on. Decide the last line before you open your mouth.', '<b>Not articulate</b> — record yourself. One voice note a night, listen back once, note one thing. You cannot fix what you have never heard. Use <b>Impromptu</b> for cold impromptu-speaking prompts and <b>Dictio</b> for dictation and articulation drills — both feed the same record-and-listen-back loop this plan already runs on.', '<b>Not witty</b> — notice how often you have the funny thought and swallow it. That gap is your wit being filtered. Say more of them.', '<b>Go deep early.</b> Share something real in the first hour and the other person will match you. It is the fastest route from stranger to friend, and it is why some people make close friends in weeks.', '<b>For the startup:</b> the 10-second, 30-second and 2-minute version. Test all three at Saturday meetups. If eyes move, it is too long.'],
     milestones: [[6, 'Story bank at 5'], [12, 'Ten stories, rehearsed out loud'], [24, 'You can hold a room']] },
 
   { id: 'dj', name: 'DJing', aim: "Play at a friend's party by late December.",
-    when: ['Tue 21:30 — 45 min', 'Wed 18:00 — 1 hour', '3–4 hours a week'],
+    when: ['Wed 18:30 — 90 min, every other week', 'Any free evening you actually feel like it — never as a chore'],
     where: ['Your room, headphones on.'],
     how: ['Use <b>Serato DJ Lite</b> — came with the controller, closer to industry standard, transfers to real gear.', 'Turn on the Beatmatch Guide lights. Switch them off once you can hear it.', 'Hercules DJ Academy on YouTube is free and made for your controller.', '<b>Weeks 1–2:</b> loading, gain, 3-band EQ, cue points, headphone cue.', '<b>Weeks 3–6:</b> manual beatmatching, then phrasing — counting 8s, spotting 32-beat phrases. Beginners skip phrasing. It is what makes a mix sound deliberate.', '<b>Weeks 7–14:</b> 15 tracks you know cold, same transitions over and over. Record 30 minutes and listen back.', 'Short sessions beat long ones. It is a motor skill.', 'This is a social asset, not a hobby. Once you have decks and a flat, you are the one who can throw a night.'],
     milestones: [[6, 'Beatmatching by ear'], [14, '30-minute set recorded'], [16, 'Played at a gathering']] },
 
   { id: 'russian', name: 'Russian', aim: 'Solid A1 by March.',
-    when: ['20–25 min a day, 5 days a week', 'One tutor call a week from week 6'],
+    when: ['20 min on the bus in, Mon–Fri', 'Sun 17:30 tutor call, every other week (from week 6)'],
     where: ['Your room. Anki on the bus.'],
     how: ['<b>Weeks 1–2:</b> Cyrillic, handwritten. You forgot it last time because you learned it by looking.', '<b>From week 3:</b> 10 min Anki top-1000 deck plus 10–15 min of one structured course. Finish one course, do not sample five apps.', '<b>From week 6:</b> one italki session a week, roughly ₹500–900 an hour. Online, so no in-person class. This is what turns study into speech.', '<b>From week 12:</b> slow-Russian podcasts on the bus.', 'You learn a language by using it, not by studying it. Speak from week 6 even though you will be bad.'],
     warn: 'This is the goal to downgrade if something has to give. Longest payoff, least connected to everything else.',
     milestones: [[2, 'Cyrillic back'], [12, '300 words, tutor calls running'], [24, 'A1 — you can handle a café in Russian']] },
 
   { id: 'read', name: 'Reading', aim: '10 books by March.',
-    when: ['Bus, Mon/Thu/Fri, 25 min each way', '22:30–23:00 nightly', 'Sat morning when it allows'],
+    when: ['Bus in, Mon–Fri, after Russian', '00:00–00:30 in bed, nightly', 'Sat lunch when solo', 'Sun café morning, every other week'],
     where: ['The bus. Your bed — book only, phone across the room. Your Monday café. Whitefield Reads.'],
     how: ['45 min a day is 30 pages is 2 books a month.', 'One book at a time.', 'Quit at page 50 if it is not working.', 'Audiobook counts if the bus is too rough.'],
     milestones: [[12, '5 books'], [24, '10 books']] },
@@ -275,7 +264,7 @@ export const SEED_PLANS: Plan[] = [
     milestones: [[5, 'Batch started'], [17, '50 m freestyle']] },
 
   { id: 'style', name: 'Clothes and grooming', aim: 'Three outfits that always work. Not a new wardrobe.',
-    when: ['Weeks 5–6: reference board', 'Week 7: tailor', 'Weeks 8–20: one or two items a month'],
+    when: ['Wed 18:30 errands + grooming, every other week', 'Weeks 5–6: reference board', 'Week 7: tailor', 'Weeks 8–20: one or two items a month'],
     where: ['Marathahalli factory outlets. A local tailor, ₹150–400 an alteration. Online: Snitch, Bonkers Corner, H&M, Uniqlo.'],
     how: ["<b>Step 1.</b> Save 50 outfits you like, on tall lean men. Look for what repeats — that is your taste.", '<b>Step 2.</b> Fit before buying. At 6\'3" your problem is length. Take five things you own to a tailor. Five tailored items beat ten new ones, for ₹1,500.', '<b>Step 3.</b> Three uniforms. Plain heavy tee + straight trousers + clean sneakers · overshirt over a tee + trousers · polo + chinos.', '<b>Step 4.</b> Replace in order: shoes, trousers, good plain tees, one overshirt.', 'Skip oversized. On 6\'3" and 80 kg it reads as a tent.', 'Retire cargos from anything social.', 'One barber, every three weeks. Beard shaped professionally once. One fragrance.'],
     milestones: [[7, 'Board done, five items tailored'], [14, 'Three uniforms working'], [24, 'You get told you dress well']] },
@@ -289,11 +278,11 @@ export const SEED_PLANS: Plan[] = [
 
 export const SEED_CHECKS: [string, string, string][] = [
   ['gym', 'Gym done', 'Mon–Fri'],
-  ['startup', 'Startup block done', 'Before 11am'],
+  ['startup', 'Startup block done', 'Tue, Thu evening, Sat'],
   ['protein', '100g+ protein', ''],
-  ['out', 'Got out of the room', 'Mon, Tue, Thu, Fri, Sat'],
+  ['out', 'Got out of the room', 'Mon, Fri, Sat'],
   ['record', 'Voice note recorded', '5 min, listen back once'],
-  ['russian', 'Russian, 20 min', ''],
+  ['russian', 'Russian, 20 min', 'Weekdays, on the bus'],
   ['read', 'Read', ''],
   ['skin', 'Skin routine, AM + PM', ''],
 ];
@@ -304,8 +293,8 @@ export const SEED_COUNTS: [string, string][] = [
 ];
 
 export const SEED_WEEK_GOALS: Record<string, number> = {
-  convos: 5, approaches: 3, ig: 2, invites: 1, followups: 1, pages: 200, hours: 13,
-  gym: 5, out: 5, protein: 6,
+  convos: 5, approaches: 3, ig: 2, invites: 1, followups: 1, pages: 200, hours: 7,
+  gym: 5, out: 4, protein: 6,
 };
 
 /** Materialized into AppState.tasks by migrateState() on first load. */
@@ -336,7 +325,7 @@ export const PHASES: [number, number, string, string[]][] = [
     'Protein kit, chair, alarm clock',
     'Baseline photos and weight', 'Level 0 approaches — 3 conversations a day']],
   [2, 5, "Weeks 3–6 · Social engine on", [
-    'Tuesday badminton and Sunday run club live', 'Weekly quota starts', 'Level 1 approaches — 2 a week',
+    'Monday café and Saturday social running', 'Weekly quota starts', 'Level 1 approaches — 2 a week',
     'Camera habit — photos at everything social', 'Protein system running',
     'DJ and Russian start (week 3)', 'Swimming starts (week 5)', 'Flat search starts (week 5)']],
   [6, 11, "Weeks 7–12 · Depth", [

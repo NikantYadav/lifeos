@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { currentSchedIndex } from '@/lib/dates';
+import { currentSchedIndex, rowsForWeek, weekLetter } from '@/lib/dates';
 import { AppState, DayEntry, Plan, SchedRow } from '@/lib/types';
 import HabitList from '../HabitList';
 import MilestonePrompt from '../MilestonePrompt';
@@ -133,7 +133,8 @@ export default function TodayPanel({
 }) {
   const day = getDay(state, todayKey);
   const entry = state.schedule[dayOfWeek];
-  const rows = entry?.[1] ?? [];
+  const week = weekLetter(curWeek);
+  const rows = rowsForWeek(entry?.[1] ?? [], week);
   const label = entry?.[0] ?? '';
   const nowIndex = now ? currentSchedIndex(rows, now) : undefined;
 
@@ -214,7 +215,7 @@ export default function TodayPanel({
       </div>
 
       <details className="day-details">
-        <summary>Show full day — {label}</summary>
+        <summary>Show full day — {label} (week {week})</summary>
 
         <div className="box" style={{ marginTop: 8 }}>
           <SchedList rows={rows} nowIndex={nowIndex} />

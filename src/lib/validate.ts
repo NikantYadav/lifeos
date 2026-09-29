@@ -130,7 +130,10 @@ function schedRow(v: unknown): SchedRow | null {
   if (!/^\d{2}:\d{2}$/.test(time)) return null;
   const keyBlock = finite(v[3]);
   const planId = typeof v[4] === 'string' ? v[4] : undefined;
-  return [time, str(v[1]), str(v[2]), keyBlock ? 1 : undefined, planId];
+  const week = v[5] === 'A' || v[5] === 'B' ? v[5] : undefined;
+  return week
+    ? [time, str(v[1]), str(v[2]), keyBlock ? 1 : undefined, planId, week]
+    : [time, str(v[1]), str(v[2]), keyBlock ? 1 : undefined, planId];
 }
 
 function weekSchedule(v: unknown): WeekSchedule | null {

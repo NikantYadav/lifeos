@@ -1,4 +1,4 @@
-import { SchedRow } from './types';
+import { AltWeek, SchedRow } from './types';
 
 /**
  * Local-calendar date key (YYYY-MM-DD).
@@ -66,6 +66,16 @@ export function weekDates(wi: number, startDate: string): string[] {
     d.setDate(d.getDate() + wi * 7 + i);
     return iso(d);
   });
+}
+
+/** Plan weeks alternate A, B, A, … starting from week index 0. */
+export function weekLetter(wi: number): AltWeek {
+  return wi % 2 === 0 ? 'A' : 'B';
+}
+
+/** A day's rows as they run in the given alternating week. */
+export function rowsForWeek(rows: SchedRow[], week: AltWeek): SchedRow[] {
+  return rows.filter((r) => !r[5] || r[5] === week);
 }
 
 function minutesOf(t: string): number {
