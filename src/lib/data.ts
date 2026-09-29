@@ -15,8 +15,8 @@ export const DAYNAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
  * office-day spine, a protected hour to land after getting home, at most one
  * effortful thing in the evening, 8 hours of sleep (00:30–08:30), and a short
  * fixed bedtime. Small daily items ride on things already happening
- * (neck/posture as the gym cooldown, kegels on the bus home, Russian on the bus
- * in). Startup gets two long weekday evenings plus a Saturday block — fewer,
+ * (Russian on the bus in), and the neck/posture/kegel routine is one short
+ * stack at home before bed rather than scattered through the day. Startup gets two long weekday evenings plus a Saturday block — fewer,
  * longer blocks rather than a daily sliver. Rows tagged 'A'/'B' alternate by
  * plan week and always come in pairs on the same slot, so no slot sits empty
  * on the off week.
@@ -36,9 +36,7 @@ function officeDay(workout: string): SchedRow[] {
     ['09:45', 'Job work + lunch', ''],
     ['15:00', 'Shoulder rehab — 5–8 min', 'Band external rotations, light scaption raises. Before the lift, low load.', 1, 'shoulder'],
     ['15:10', 'Gym — 70 min', `${workout}, plus shrugs and face pulls. Top of the range, then leave — no junk sets.`, 1, 'gym'],
-    NECK_ROW('16:20'),
-    POSTURE_ROW('16:25'),
-    ['16:35', 'Bus home — kegels, then switch off', 'Kegels 3 sets of 10–15 on the bus. Then music, a podcast, or the book. No work email.', 1, 'sexual-health'],
+    ['16:25', 'Bus home — switch off', 'Music, a podcast, or the book. No work email.'],
     ['17:15', 'Land — 1h, nothing scheduled', 'Shower, protein, lie down. No plans, no catching up. This hour is what makes the evening worth having.'],
   ];
 }
@@ -52,6 +50,10 @@ const STARTUP_EVENING: SchedRow[] = [
 
 /** Every night: same close so it runs on autopilot. Sleep 00:30–08:30. */
 const BEDTIME: SchedRow[] = [
+  NECK_ROW('23:00'),
+  POSTURE_ROW('23:05'),
+  KEGEL_ROW('23:10'),
+  ['23:15', 'Free', ''],
   ['23:30', 'Prep tomorrow — 10 min', 'Boil the eggs, pack the gym bag, lay out clothes. This is what makes a 30-minute morning work.'],
   JOURNAL_ROW('23:45'),
   ['00:00', 'Read in bed', 'Book only, phone across the room. Reverse kegel as you settle.'],
@@ -89,6 +91,9 @@ export const SEED_SCHEDULE: WeekSchedule = {
   ]],
   5: ['Friday — office. Back, triceps, shoulders. Out.', [
     ...officeDay('Back, triceps, shoulders'),
+    NECK_ROW('18:15'),
+    POSTURE_ROW('18:20'),
+    KEGEL_ROW('18:25'),
     ['18:30', 'Shower, best outfit of the week', 'Take a 20-min nap first if the week took it out of you.'],
     JOURNAL_ROW('19:15', 'Write today down before you head out'),
     ['20:00', 'Out', 'You make the plan and you make the group chat, even if it is four people. Take photos of everyone. Leave while it is still good.', 1, 'social'],
@@ -122,10 +127,7 @@ export const SEED_SCHEDULE: WeekSchedule = {
     ['17:30', 'Write one story — 30 min', 'Rework one thing that happened into 90 seconds: setup, tension, turn, last line.', 1, 'speak', 'B'],
     ['18:15', 'Free', ''],
     ['20:00', 'Dinner', ''],
-    NECK_ROW('21:30'),
-    POSTURE_ROW('21:35'),
-    KEGEL_ROW('21:40'),
-    ['21:45', 'Free', ''],
+    ['21:30', 'Free', ''],
     ...BEDTIME,
   ]],
 };
@@ -184,7 +186,7 @@ export const SEED_PLANS: Plan[] = [
     milestones: [[2, 'Baseline photos, apps live'], [19, 'Real set shot, profiles rebuilt'], [24, 'Dating on good photos']] },
 
   { id: 'gym', name: 'Gym', aim: '80 kg to about 86 kg, roughly 4–6 kg of it muscle.',
-    when: ['Mon–Fri — 15:00–16:30 at the office: rehab, 70-min lift, neck + posture as the cooldown', 'Bus home 16:35, home by about 17:15'],
+    when: ['Mon–Fri — 15:00–16:20 at the office: rehab, then a 70-min lift', 'Bus home 16:25, home by about 17:15'],
     where: ['Office gym only. City bus both ways, individual tickets, about ₹15–25 a trip.'],
     how: ['Five days, Monday to Friday. Weekend off. The Sunday run is the only extra.', '<b>The split:</b> Mon chest + biceps · Tue back + triceps · Wed shoulders + legs · Thu chest + biceps · Fri back + triceps + shoulders. Full exercise list is in the Body tab.', 'Every session, every day, on top of the split: shrugs and face pulls.', '<b>Right-shoulder rehab.</b> You have a cyst/tendonitis there. Before the lift, as a warm-up: 5–8 minutes of band external rotations and light scaption raises, low load. Doing it before rather than after primes the joint before it takes the day\'s pressing and pulling load, rather than adding more work to an already-fatigued shoulder. If it ever aggravates the shoulder, move it to after the session instead — this is a reasoned default, not a fixed rule.', 'One rule: top of the rep range on every set, add 2.5 kg next time.', 'Log every set. Untracked training is why people lift for six months and look the same.', 'Spare t-shirt and wipes in the bag. Change after, shower at home.'],
     warn: 'Five days from tomorrow with no ramp. The first ten days will be rough. Start at the bottom of every rep range and let the weight climb — do not add extra volume in week one. Keep the shoulder rehab light — it is maintenance, not a second workout.',
@@ -226,7 +228,7 @@ export const SEED_PLANS: Plan[] = [
    * function).
    */
   { id: 'sexual-health', name: 'Sexual health', aim: 'Better erection quality and sexual stamina, less performance anxiety — solo practice only, tracked the same low-key way as everything else.',
-    when: ['Kegels — 3 sets of 10–15, daily, stacked onto something you already do (the bus, brushing teeth)', 'Reverse kegel / relaxation — nightly, part of the wind-down block', 'Self sensate focus — once a week, no fixed length', 'Stop-start practice — worked into solo sessions as they happen, not a separate slot'],
+    when: ['Kegels — 3 sets of 10–15, daily, at home, part of the pre-bed stack with neck and posture', 'Reverse kegel / relaxation — nightly, part of the wind-down block', 'Self sensate focus — once a week, no fixed length', 'Stop-start practice — worked into solo sessions as they happen, not a separate slot'],
     where: ['Anywhere private. No equipment.'],
     how: ['<b>Kegels.</b> Find the muscle once by stopping your urine stream mid-flow — that is identification only, do not make that your regular practice spot. 3 sets of 10–15 contractions a day, hold 3–5 seconds, release. These are the muscles that compress the base of the penis and help sustain rigidity. 8–12 weeks of consistent practice before you can honestly judge a change.', '<b>Reverse kegels.</b> The opposite move — consciously lengthen and release the same muscles instead of squeezing. Useful against a chronically tight pelvic floor and performance-related tension. Do this one at night, as part of winding down, since it pairs naturally with relaxing rather than exerting.', '<b>Performance anxiety is physiological, not just "in your head."</b> Stress narrows blood flow — that is the actual mechanism, and it is why anxiety alone can prevent an erection independent of anything else going on. Mindfulness and self sensate focus are the two evidence-backed levers for breaking that anticipation-anxiety loop.', '<b>Self sensate focus.</b> A solo, non-goal-oriented body-awareness practice — no partner, no performance, no aiming for arousal. Roughly: settle and notice general body sensation with your eyes closed, extend that same unhurried attention to parts of the body you do not normally focus on, then to the genitals — noticing sensation for its own sake, not chasing an outcome. If an anxious or distracting thought shows up, just notice it without judgment and bring attention back to physical sensation. Full step-by-step guide, confirmed solo and no partner required: <a href="https://scisexualhealth.ca/sensation-and-touch-sci/self-sensate-focus/">scisexualhealth.ca — self sensate focus</a>.', '<b>If porn is part of the picture.</b> Porn-induced ED is a real, described pattern — desensitization from frequent use — though the evidence that porn alone reliably causes ED is thin, and where it does apply it is usually psychological rather than physical damage, which is the good news. Recovery reports commonly cluster around 60–120 days of reduced or no porn use for the brain\'s reward response to recalibrate, sometimes longer. Treat that as a range, not a promise.', '<b>Stamina — the stop-start method.</b> Bring yourself close to the edge during a solo session, pause or back off until the urge passes, then resume. Repeat a few times per session. The evidence is real but modest — small trials show a few extra minutes after around 12 weeks of consistent practice — so treat it as practicing a skill, not a guaranteed fix. It doubles as a way to get comfortable with arousal without anxiety riding along.', '<b>General stamina and circulation.</b> Already covered — the gym plan\'s cardio and strength work is directly linked to erectile function in the research (≥150 minutes a week of moderate cardio plus regular strength training measurably improves scores in studies). No separate cardio prescription needed here.'],
     warn: 'None of this replaces a doctor if something feels physically wrong, not just anxious or slow to improve. This plan is conservative, evidence-based self-practice — not a diagnosis.',

@@ -12,7 +12,7 @@ import { AppState, newId } from './types';
 import { iso } from './dates';
 
 /** Bump when the seed shape in data.ts changes, to re-run migration once more. */
-export const CURRENT_SEED_VERSION = 9;
+export const CURRENT_SEED_VERSION = 10;
 
 /**
  * Titles removed from SEED_TASKS/SEED_HABITS after some deployments had
@@ -28,15 +28,15 @@ const REMOVED_HABIT_TITLES = new Set(['Barber']);
 /** Same idea as REMOVED_TASK_TITLES above, for the seedVersion 2 -> 3 step. */
 const REMOVED_TASK_TITLES_V3 = new Set(['Book four Tuesday Playo slots']);
 
-/** Plans whose `when` describes the timetable, re-synced on the seedVersion -> 9 step. */
-const SCHEDULE_WHEN_PLAN_IDS = ['social', 'approach', 'places', 'dating', 'gym', 'startup', 'speak', 'dj', 'russian', 'read', 'style'];
+/** Plans whose `when` describes the timetable, re-synced on the seedVersion -> 10 step. */
+const SCHEDULE_WHEN_PLAN_IDS = ['social', 'approach', 'places', 'dating', 'gym', 'startup', 'speak', 'dj', 'russian', 'read', 'style', 'sexual-health'];
 
 /**
- * [check key, old seed sub-label] pairs rewritten on the seedVersion -> 9
- * step, only if still untouched. Includes the labels seedVersions 7 and 8
- * shipped, since this step supersedes both.
+ * [check key, old seed sub-label] pairs rewritten on the seedVersion -> 10
+ * step, only if still untouched. Includes the labels seedVersions 7–9
+ * shipped, since this step supersedes them.
  */
-const OLD_CHECK_SUBS_V9: [string, string][] = [
+const OLD_CHECK_SUBS_V10: [string, string][] = [
   ['out', 'Mon, Tue, Thu, Fri, Sat'], ['out', 'Mon, Tue, Fri, Sat, Sun'],
   ['russian', ''],
   ['startup', 'Before 11am'], ['startup', 'Wed evening, Sat'],
@@ -133,7 +133,8 @@ export function migrateState(state: AppState): AppState {
    * Office every weekday (out the door 09:00, home ~17:15), 8 hours of
    * sleep, and a lighter week: one effortful thing per evening, badminton
    * and run club dropped, and some slots alternating week A/B in pairs.
-   * Supersedes seedVersions 7 and 8, earlier cuts of this same week. Schedule is replaced outright as in the
+   * Neck/posture/kegels are a home stack before bed, not the gym or bus.
+   * Supersedes seedVersions 7–9, earlier cuts of this same week. Schedule is replaced outright as in the
    * steps above. Each touched plan's `when` (and the gym's `where`, which
    * described the old Tue/Wed off-peak trip) is replaced from the seed since
    * it only ever restates the timetable — `how`/`aim`/milestones, where
@@ -142,7 +143,7 @@ export function migrateState(state: AppState): AppState {
    * nights out 5 -> 4, so those goals follow, but only if still an old
    * seed value.
    */
-  if (state.seedVersion < 9) {
+  if (state.seedVersion < 10) {
     seeded.schedule = structuredClone(SEED_SCHEDULE);
     const seedById = new Map(SEED_PLANS.map((p) => [p.id, p]));
     seeded.plans = seeded.plans.map((p) => {
@@ -155,7 +156,7 @@ export function migrateState(state: AppState): AppState {
     });
     const seedChecks = new Map(SEED_CHECKS.map((c) => [c[0], c]));
     seeded.checks = seeded.checks.map((c) =>
-      OLD_CHECK_SUBS_V9.some(([k, sub]) => c[0] === k && c[2] === sub) ? [c[0], c[1], seedChecks.get(c[0])![2]] : c
+      OLD_CHECK_SUBS_V10.some(([k, sub]) => c[0] === k && c[2] === sub) ? [c[0], c[1], seedChecks.get(c[0])![2]] : c
     );
     const goals = { ...seeded.weekGoals };
     if (OLD_HOURS_GOALS.has(goals.hours)) goals.hours = SEED_WEEK_GOALS.hours;
