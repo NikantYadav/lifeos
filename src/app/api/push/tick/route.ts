@@ -47,7 +47,10 @@ export async function GET(req: NextRequest) {
     try {
       await webpush.sendNotification(
         sub,
-        JSON.stringify({ title: `${time} · ${title}`, body: note || 'Starts now.', tag: `lifeos-block-${at}`, url: '/' })
+        JSON.stringify({ title: `${time} · ${title}`, body: note || 'Starts now.', tag: `lifeos-block-${at}`, url: '/' }),
+        // "Starts now" is time-sensitive: high urgency wakes Android out of
+        // Doze, and a short TTL drops it rather than delivering it hours late.
+        { urgency: 'high', TTL: 600 }
       );
       sent++;
     } catch (err: unknown) {

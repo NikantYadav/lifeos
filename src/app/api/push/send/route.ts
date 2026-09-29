@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await webpush.sendNotification(sub, payload);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, endpointOrigin: new URL(sub.endpoint).origin });
   } catch (err: unknown) {
     // 404/410 from the push service means the subscription is dead (the user
     // uninstalled, cleared data, etc.) — clean it up so future sends don't
@@ -53,6 +53,10 @@ export async function POST(req: NextRequest) {
       await redis.del(PUSH_SUB_KEY);
       return NextResponse.json({ error: 'Subscription expired and was removed.' }, { status: 410 });
     }
-    return NextResponse.json({ error: 'Could not send notification.' }, { status: 502 });
+    const { body: pushBody } = (err as { body?: string }) ?? {};
+    return NextResponse.json(
+      { error: 'Could not send notification.', pushStatus: statusCode ?? null, pushBody: pushBody ?? String(err) },
+      { status: 502 }
+    );
   }
 }

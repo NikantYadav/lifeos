@@ -65,6 +65,16 @@ async function computeInitialState(): Promise<void> {
   try {
     const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     const sub = await registration.pushManager.getSubscription();
+    // The server keeps one subscription slot, which another browser can take
+    // over or a failed send (404/410) can clear, while this browser still
+    // looks subscribed. Re-save it on every load so this device gets pushes.
+    if (sub) {
+      void fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub),
+      }).catch(() => {});
+    }
     setState(sub ? 'subscribed' : 'not-subscribed');
   } catch {
     setState('unsupported');

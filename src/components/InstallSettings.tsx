@@ -65,6 +65,21 @@ export default function InstallSettings() {
     };
   }, []);
 
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const sendTest = async () => {
+    setTestResult('Sending…');
+    try {
+      const res = await fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Test notification', message: 'Push is working.' }),
+      });
+      setTestResult(`${res.status}: ${await res.text()}`);
+    } catch (err) {
+      setTestResult(`Request failed: ${String(err)}`);
+    }
+  };
+
   const install = async () => {
     if (!installEvent) return;
     await installEvent.prompt();
@@ -103,6 +118,12 @@ export default function InstallSettings() {
           {pushState === 'subscribed' ? 'Turn off' : 'Turn on'}
         </button>
       )}
+      {pushState === 'subscribed' && (
+        <button type="button" className="settings-btn" onClick={() => void sendTest()}>
+          Send test notification
+        </button>
+      )}
+      {testResult && <p className="settings-note">{testResult}</p>}
     </div>
   );
 }
