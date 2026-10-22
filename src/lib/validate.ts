@@ -1,6 +1,7 @@
 import {
   AppState,
   Approach,
+  Check,
   ApproachOutcome,
   DayEntry,
   EMPTY_STATE,
@@ -161,11 +162,21 @@ function numberRecord(v: unknown): Record<string, number> {
   return out;
 }
 
-function stringTriple(v: unknown): [string, string, string] | null {
+function checkDays(v: unknown): number[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const days = new Set<number>();
+  for (const d of v) {
+    if (typeof d === 'number' && Number.isInteger(d) && d >= 0 && d <= 6) days.add(d);
+  }
+  return days.size ? [...days].sort((a, b) => a - b) : undefined;
+}
+
+function check(v: unknown): Check | null {
   if (!Array.isArray(v) || v.length < 2) return null;
   const key = str(v[0]).trim();
   if (!key) return null;
-  return [key, str(v[1]), str(v[2])];
+  const days = checkDays(v[3]);
+  return days ? [key, str(v[1]), str(v[2]), days] : [key, str(v[1]), str(v[2])];
 }
 
 function stringPair(v: unknown): [string, string] | null {
@@ -412,7 +423,7 @@ export function parseState(input: unknown): AppState {
     plans: collect(input.plans, plan),
     schedule: weekSchedule(input.schedule) ?? {},
     weekGoals: numberRecord(input.weekGoals),
-    checks: collect(input.checks, stringTriple),
+    checks: collect(input.checks, check),
     counts: collect(input.counts, stringPair),
     seedVersion: seedVersion !== null && seedVersion >= 0 ? Math.floor(seedVersion) : 0,
 

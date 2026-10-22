@@ -1,4 +1,13 @@
 import {
+  NEW_FRI_OUT_NOTE,
+  NEW_MORNING_NOTE,
+  NEW_SAT_DRILL_NOTE,
+  NEW_TASKS_V11,
+  OLD_FRI_OUT_NOTE,
+  OLD_MORNING_NOTE,
+  OLD_SAT_DRILL_NOTE,
+  PREOUT_CHECK,
+  PRESENCE_PLAN,
   SEED_CHECKS,
   SEED_COUNTS,
   SEED_HABITS,
@@ -6,13 +15,16 @@ import {
   SEED_SCHEDULE,
   SEED_TASKS,
   SEED_WEEK_GOALS,
+  SOCIAL_HOW_V11,
+  SPEAK_HOW_V11,
   START,
+  STYLE_HOW_V11,
 } from './data';
 import { AppState, newId } from './types';
 import { iso } from './dates';
 
 /** Bump when the seed shape in data.ts changes, to re-run migration once more. */
-export const CURRENT_SEED_VERSION = 10;
+export const CURRENT_SEED_VERSION = 11;
 
 /**
  * Titles removed from SEED_TASKS/SEED_HABITS after some deployments had
@@ -41,6 +53,24 @@ const OLD_CHECK_SUBS_V10: [string, string][] = [
   ['russian', ''],
   ['startup', 'Before 11am'], ['startup', 'Wed evening, Sat'],
 ];
+
+/** Weekday-limited checks on the seedVersion -> 11 step (JS getDay, 0 = Sunday). */
+const CHECK_DAYS_V11: Record<string, number[]> = {
+  gym: [1, 2, 3, 4, 5],
+  startup: [2, 4, 6],
+  out: [1, 5, 6],
+  russian: [1, 2, 3, 4, 5],
+};
+
+/** [weekday, time, title, old note, new note]: rewritten on seedVersion -> 11 only if the note is still the old seed text. */
+const SCHEDULE_NOTES_V11: [number, string, string, string, string][] = [
+  ...[1, 2, 3, 4, 5].map((d): [number, string, string, string, string] => [d, '08:35', 'Shower, breakfast', OLD_MORNING_NOTE, NEW_MORNING_NOTE]),
+  [5, '18:30', 'Shower, best outfit of the week', OLD_FRI_OUT_NOTE, NEW_FRI_OUT_NOTE],
+  [6, '18:45', 'Photo drill — 10 min', OLD_SAT_DRILL_NOTE, NEW_SAT_DRILL_NOTE],
+];
+
+/** Plan id -> `how` line appended on seedVersion -> 11 if not already present. */
+const HOW_ADDITIONS_V11: Record<string, string> = { speak: SPEAK_HOW_V11, style: STYLE_HOW_V11, social: SOCIAL_HOW_V11 };
 
 /** Goals from earlier seeds, replaced only if the user never changed them. */
 const OLD_HOURS_GOALS = new Set([13, 10, 5]);
@@ -162,6 +192,50 @@ export function migrateState(state: AppState): AppState {
     if (OLD_HOURS_GOALS.has(goals.hours)) goals.hours = SEED_WEEK_GOALS.hours;
     if (OLD_OUT_GOALS.has(goals.out)) goals.out = SEED_WEEK_GOALS.out;
     seeded.weekGoals = goals;
+  }
+
+  /**
+   * Presence and voice, plus weekday-limited checks. Everything is additive:
+   * the plan is added only if no plan has that id, `how` lines only if absent,
+   * tasks only if no task shares the title, checks' `days` only where unset,
+   * and schedule notes only where the stored text still equals the old seed.
+   */
+  if (state.seedVersion < 11) {
+    if (!seeded.plans.some((p) => p.id === PRESENCE_PLAN.id)) {
+      seeded.plans = [...seeded.plans, structuredClone(PRESENCE_PLAN)];
+    }
+    seeded.plans = seeded.plans.map((p) => {
+      const line = HOW_ADDITIONS_V11[p.id];
+      if (!line || p.how?.includes(line)) return p;
+      return { ...p, how: [...(p.how ?? []), line] };
+    });
+
+    const existingTitles = new Set(seeded.tasks.map((t) => t.title));
+    const newTasks = NEW_TASKS_V11.filter((t) => !existingTitles.has(t.title)).map((t) => ({
+      ...t,
+      id: newId(),
+      createdAt: Date.now(),
+      status: 'pending' as const,
+    }));
+    if (newTasks.length) seeded.tasks = [...seeded.tasks, ...newTasks];
+
+    seeded.checks = seeded.checks.map((c) =>
+      c[3] === undefined && CHECK_DAYS_V11[c[0]] ? [c[0], c[1], c[2], [...CHECK_DAYS_V11[c[0]]]] : c
+    );
+    if (!seeded.checks.some((c) => c[0] === PREOUT_CHECK[0])) {
+      seeded.checks = [...seeded.checks, structuredClone(PREOUT_CHECK)];
+    }
+
+    const schedule = { ...seeded.schedule };
+    for (const [dow, time, title, oldNote, newNote] of SCHEDULE_NOTES_V11) {
+      const entry = schedule[dow];
+      if (!entry) continue;
+      schedule[dow] = [
+        entry[0],
+        entry[1].map((r) => (r[0] === time && r[1] === title && r[2] === oldNote ? ([r[0], r[1], newNote, ...r.slice(3)] as typeof r) : r)),
+      ];
+    }
+    seeded.schedule = schedule;
   }
 
   return seeded;

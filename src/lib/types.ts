@@ -40,6 +40,12 @@ export type SchedRow = [time: string, title: string, note: string, isKeyBlock?: 
 /** Keyed by JS Date.getDay(), 0 = Sunday. */
 export type WeekSchedule = Record<number, [label: string, rows: SchedRow[]]>;
 
+/**
+ * [key, label, sub, days?] — `days` is JS getDay() (0 = Sunday), ints 0-6,
+ * deduped and sorted. Absent means due every day.
+ */
+export type Check = [key: string, label: string, sub: string, days?: number[]];
+
 export type WeekGoals = Record<string, number>;
 
 export interface Plan {
@@ -174,7 +180,7 @@ export interface AppState {
   plans: Plan[];
   schedule: WeekSchedule;
   weekGoals: WeekGoals;
-  checks: [key: string, label: string, sub: string][];
+  checks: Check[];
   counts: [key: string, label: string][];
   /** Drives the one-time data.ts -> state seed migration. */
   seedVersion: number;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkDueOn } from '@/lib/checks';
 import { currentWeekIndex, iso } from '@/lib/dates';
 import { dueHabits } from '@/lib/habits';
 import { migrateState } from '@/lib/migrate';
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
   const curWeek = currentWeekIndex(now, state.startDate);
   const day = state.days[todayKey] ?? { c: {}, n: {} };
 
-  const openChecks = state.checks.filter(([key]) => !day.c[key]);
+  const openChecks = state.checks.filter((c) => checkDueOn(c, now.getDay()) && !day.c[c[0]]);
   const openHabits = dueHabits(state.habits, now);
   const reviewDone = state.reviews.some((r) => r.weekIndex === curWeek);
 

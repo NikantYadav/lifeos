@@ -1,4 +1,4 @@
-import { Habit, Plan, SchedRow, Task, WeekSchedule } from './types';
+import { Check, Habit, Plan, SchedRow, Task, WeekSchedule } from './types';
 
 export const START = new Date(2026, 8, 15);
 export const END = new Date(2027, 2, 1);
@@ -21,6 +21,13 @@ export const DAYNAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
  * plan week and always come in pairs on the same slot, so no slot sits empty
  * on the off week.
  */
+export const OLD_MORNING_NOTE = '6 eggs, boiled last night. Bag is already packed.';
+export const NEW_MORNING_NOTE = '6 eggs, boiled last night. Bag is already packed. Then the 2-minute micro-routine: cold water on your face, 10 push-ups, posture check, one line on what today’s win is.';
+export const OLD_FRI_OUT_NOTE = 'Take a 20-min nap first if the week took it out of you.';
+export const NEW_FRI_OUT_NOTE = 'Take a 20-min nap first if the week took it out of you. Then run the pre-out checklist: cold shower, 1-min breathing, posture, one story ready, outfit.';
+export const OLD_SAT_DRILL_NOTE = 'Mirror. Five positions cold — weight on back foot, three-quarter turn, walking shot, leaning, candid laugh. You are dressed anyway.';
+export const NEW_SAT_DRILL_NOTE = OLD_SAT_DRILL_NOTE + ' Run the pre-out checklist after: 1-min breathing, posture, one story ready.';
+
 const NECK_ROW = (t: string): SchedRow => [t, 'Neck exercises — 5 min', 'Isometrics, sideways stretches, chin tucks', 1, 'neck'];
 const POSTURE_ROW = (t: string): SchedRow => [t, 'Posture — 5 min', 'Wall angels, doorway chest stretch, prone Y-raise', 1, 'posture'];
 const KEGEL_ROW = (t: string): SchedRow => [t, 'Kegels + reverse kegel — 5 min', '', 1, 'sexual-health'];
@@ -31,7 +38,7 @@ const IMPROMPTU_ROW = (t: string): SchedRow => [t, 'Impromptu / Dictio — 10 mi
 function officeDay(workout: string): SchedRow[] {
   return [
     ['08:30', 'Wake', 'Phone stays across the room'],
-    ['08:35', 'Shower, breakfast', '6 eggs, boiled last night. Bag is already packed.'],
+    ['08:35', 'Shower, breakfast', NEW_MORNING_NOTE],
     ['09:00', 'Bus in — Russian, then read', 'Anki 20 min, then the book for the rest of the ride.', 1, 'russian'],
     ['09:45', 'Job work + lunch', ''],
     ['15:00', 'Shoulder rehab — 5–8 min', 'Band external rotations, light scaption raises. Before the lift, low load.', 1, 'shoulder'],
@@ -94,7 +101,7 @@ export const SEED_SCHEDULE: WeekSchedule = {
     NECK_ROW('18:15'),
     POSTURE_ROW('18:20'),
     KEGEL_ROW('18:25'),
-    ['18:30', 'Shower, best outfit of the week', 'Take a 20-min nap first if the week took it out of you.'],
+    ['18:30', 'Shower, best outfit of the week', NEW_FRI_OUT_NOTE],
     JOURNAL_ROW('19:15', 'Write today down before you head out'),
     ['20:00', 'Out', 'You make the plan and you make the group chat, even if it is four people. Take photos of everyone. Leave while it is still good.', 1, 'social'],
     ['00:30', 'Home', 'Home by 00:30. Saturday is worth more than the last hour.'],
@@ -110,7 +117,7 @@ export const SEED_SCHEDULE: WeekSchedule = {
     ['16:00', 'Swimming — 90 min', 'Machaxi Nadando, Varthur. From week 5.', 1, 'swim'],
     ['17:30', 'Rest', ''],
     KEGEL_ROW('18:30'),
-    ['18:45', 'Photo drill — 10 min', 'Mirror. Five positions cold — weight on back foot, three-quarter turn, walking shot, leaning, candid laugh. You are dressed anyway.', 1, 'dating'],
+    ['18:45', 'Photo drill — 10 min', NEW_SAT_DRILL_NOTE, 1, 'dating'],
     ['19:30', 'Social', "Your group, someone's place, a Koramangala startup thing twice a month", 1, 'social'],
     JOURNAL_ROW('00:00', 'Home. Five lines, then bed.'),
     ['00:30', 'Sleep', '8 hours.'],
@@ -146,6 +153,34 @@ export const SPLIT: [string, string, string][] = [
  */
 export const DAILY_GYM_ADDONS = 'Shrugs · Face pulls';
 
+/** Added on the seedVersion -> 11 step (and seeded fresh); see migrate.ts. */
+export const PREOUT_CHECK: Check = ['preout', 'Pre-out checklist', 'Cold shower · 1-min breathing · posture · one story ready · outfit', [5, 6]];
+
+/** Lines appended to existing plans' `how` on the seedVersion -> 11 step; also baked into SEED_PLANS. */
+export const SPEAK_HOW_V11 = '<b>Voice, pace, fillers.</b> In the nightly voice note, listen for three things: voice from the chest, a slower cadence with deliberate pauses, and every "um". Count the ums. Next night, beat the count.';
+export const STYLE_HOW_V11 = '<b>One standout item.</b> A jacket or a pair of shoes with real character that you wear until it is broken in. Plain basics plus one piece people remember beats a full outfit that blends in.';
+export const SOCIAL_HOW_V11 = '<b>Rare, specific compliments.</b> Praise one concrete thing — "that story about the train was great" — not "you are cool". Rare and specific is believed; frequent and generic is noise.';
+
+export const PRESENCE_PLAN: Plan = { id: 'presence', name: 'Presence and voice', aim: 'Carry yourself and speak like someone worth listening to.',
+  when: ['Morning: 2-minute micro-routine inside the 08:35 shower slot — cold water on the face, 10 push-ups, posture check, one line on what today’s win is', 'Fri and Sat: the pre-out checklist before you leave', 'Every night: the voice note — count the ums'],
+  how: ['<b>Posture and walk.</b> Shoulders back, chin slightly down, eyes forward. Walk a little slower than feels natural. Hurry reads as nerves.',
+    '<b>Smile.</b> A small closed-mouth smile with strangers, a full one with friends.',
+    '<b>Voice.</b> Speak from the chest, slower than you think you need to. Pause on purpose. End sentences cleanly — downward, not upward.',
+    '<b>Cut filler words.</b> Count the "ums" in the nightly voice note. Halve the count, then halve it again.',
+    '<b>Statements, not questions.</b> When you give an opinion, say it as a statement. "That place is overrated", not "Isn’t that place overrated?"',
+    '<b>Do not rush to fill silence.</b> A two-second gap feels like ten to you and like nothing to them.',
+    '<b>One minute of slow breathing</b> before you walk into a room or start speaking. In through the nose for four, out for six.',
+    '<b>Rare, specific compliments.</b> Say one true, concrete thing when you mean it. Not a stream of them.',
+    '<b>Keep your word.</b> Small promises kept — the text you said you would send, the time you said you would arrive — are the whole of a reputation.'],
+  milestones: [[8, 'Filler words halved in voice notes'], [12, 'Morning micro-routine runs without thinking'], [20, 'One signature story that lands every time']] };
+
+/** Tasks added on the seedVersion -> 11 step (appended only if the title is absent). */
+export const NEW_TASKS_V11: Omit<Task, 'id' | 'createdAt' | 'status'>[] = [
+  { title: 'Craft one signature story', detail: 'One story, 90 seconds, a last line decided in advance. Tell it until it lands every time.', planId: 'speak', triggerWeek: 9 },
+  { title: 'Buy one standout piece — a jacket or shoes you wear until broken in', detail: 'One item with character. Fit it, then wear it on repeat.', planId: 'style', triggerWeek: 8 },
+  { title: 'Plan a short solo trip', detail: 'A weekend away by yourself. Good for stories, confidence and presence.', planId: 'presence', triggerWeek: 18 },
+];
+
 export const SEED_PLANS: Plan[] = [
   { id: 'principles', name: 'Principles', aim: 'The handful of ideas everything else runs on. Read this one first.',
     how: ['<b>Proximity plus repetition makes friends.</b> Not chemistry, not effort. It is why you had 10 friends in college and none here. So the whole plan is built on seeing the same people at the same place at the same time every week — the gym, the juice stall, the Tuesday court, the Sunday run.',
@@ -161,7 +196,7 @@ export const SEED_PLANS: Plan[] = [
   { id: 'social', name: 'Social circle', aim: 'From nobody to 3–4 close friends and 2–3 groups by March.',
     when: ['Mon 18:30 café — your regular one week, a new place the next', 'Fri 20:00 out — home by 00:30', 'Sat 19:30 social', 'Sun 10:00 brunch with someone, every other week'],
     where: ['Machaxi Scooled Badminton, AECS Layout (0.2 km) — solo slots on Playo, ₹150–350', 'PlayTM Sports Arena Marathahalli · Sporthood Doddanekundi · Gamezy Shuttle Hub Munnekolala · iSports Arena Kundalahalli Gate', 'Whitefield Run Club — weekend mornings, 3K plus games', 'Whitefield Reads — Saturdays, free', 'One café in Marathahalli you go to every Monday'],
-    how: ['Book the SAME Playo slot four weeks running. Same regulars come back. That is the trick.', 'Week 4, ask straight out: "Do you all have a group? Add me, I am here every Tuesday."', '<b>Find the organiser.</b> At the run club, the court, the meetup — talk to whoever runs it. One person who knows fifty people is worth fifty people.', 'Exchange Instagram, not numbers.', '<b>The camera trick.</b> Take good photos of people on your phone at anything social. Show them the shot. They will want it — "give me your Instagram, I will send it." You get the handle, they get something they actually wanted, and you get reps at photography for your own photos later. Free, and it works every single time.', 'Follow up inside 48 hours with something in it: the photo, a link, the city guide, a booking.', 'Third time you see someone, make it a group of 3–4 and bring someone from a different context.', 'Start the WhatsApp group yourself. Name it for the activity — "Tuesday Badminton" — not the people. You post the booking link each week. That is the whole job, and it makes you the hub.', 'After any activity with new people, bundle them into a chat the same night. Activity chat becomes a friend chat within a month.'],
+    how: ['Book the SAME Playo slot four weeks running. Same regulars come back. That is the trick.', 'Week 4, ask straight out: "Do you all have a group? Add me, I am here every Tuesday."', '<b>Find the organiser.</b> At the run club, the court, the meetup — talk to whoever runs it. One person who knows fifty people is worth fifty people.', 'Exchange Instagram, not numbers.', '<b>The camera trick.</b> Take good photos of people on your phone at anything social. Show them the shot. They will want it — "give me your Instagram, I will send it." You get the handle, they get something they actually wanted, and you get reps at photography for your own photos later. Free, and it works every single time.', 'Follow up inside 48 hours with something in it: the photo, a link, the city guide, a booking.', 'Third time you see someone, make it a group of 3–4 and bring someone from a different context.', 'Start the WhatsApp group yourself. Name it for the activity — "Tuesday Badminton" — not the people. You post the booking link each week. That is the whole job, and it makes you the hub.', 'After any activity with new people, bundle them into a chat the same night. Activity chat becomes a friend chat within a month.', SOCIAL_HOW_V11],
     quota: ['5 new conversations', '2 Instagram exchanges', '1 invite sent', '1 follow-up message'],
     milestones: [[6, '12 acquaintances, 4 people you text, in 1 group chat'], [12, '2 groups, 1 you run, 8 you text'], [18, 'First party at your flat'], [24, '25–35 acquaintances, 10–12 you text, 3–4 close']] },
 
@@ -237,7 +272,7 @@ export const SEED_PLANS: Plan[] = [
   { id: 'speak', name: 'Talking and stories', aim: 'Never run out of things to say. Ten stories you can tell well.',
     when: ['3 conversations a day, built into the walk, the bus, the gym, the café', '5-minute voice note every night', 'Impromptu / Dictio — 10 min, Mon and Wed', 'Sun 17:30 — write one story, every other week'],
     where: ['Everywhere. Needs no venue, which is why it is the cheapest win on the list.'],
-    how: ['<b>Running out of things to say</b> is a hook problem. Every answer has 2–3 hooks. "Moved from Pune last year for work" gives you Pune, moving, work, timing. Pick one and go deeper, or match it with something of your own. Name the hook in your head for two weeks and it goes automatic.', '<b>Awkward pauses</b> are a volume problem. Three conversations a day. After about 300 the first twenty seconds stops feeling like a cliff.', '<b>Boring stories</b> are structure, not material. Write ten things that happened to you. Rework each into 90 seconds: setup, tension, turn, and a line to finish on. Decide the last line before you open your mouth.', '<b>Not articulate</b> — record yourself. One voice note a night, listen back once, note one thing. You cannot fix what you have never heard. Use <b>Impromptu</b> for cold impromptu-speaking prompts and <b>Dictio</b> for dictation and articulation drills — both feed the same record-and-listen-back loop this plan already runs on.', '<b>Not witty</b> — notice how often you have the funny thought and swallow it. That gap is your wit being filtered. Say more of them.', '<b>Go deep early.</b> Share something real in the first hour and the other person will match you. It is the fastest route from stranger to friend, and it is why some people make close friends in weeks.', '<b>For the startup:</b> the 10-second, 30-second and 2-minute version. Test all three at Saturday meetups. If eyes move, it is too long.'],
+    how: ['<b>Running out of things to say</b> is a hook problem. Every answer has 2–3 hooks. "Moved from Pune last year for work" gives you Pune, moving, work, timing. Pick one and go deeper, or match it with something of your own. Name the hook in your head for two weeks and it goes automatic.', '<b>Awkward pauses</b> are a volume problem. Three conversations a day. After about 300 the first twenty seconds stops feeling like a cliff.', '<b>Boring stories</b> are structure, not material. Write ten things that happened to you. Rework each into 90 seconds: setup, tension, turn, and a line to finish on. Decide the last line before you open your mouth.', '<b>Not articulate</b> — record yourself. One voice note a night, listen back once, note one thing. You cannot fix what you have never heard. Use <b>Impromptu</b> for cold impromptu-speaking prompts and <b>Dictio</b> for dictation and articulation drills — both feed the same record-and-listen-back loop this plan already runs on.', '<b>Not witty</b> — notice how often you have the funny thought and swallow it. That gap is your wit being filtered. Say more of them.', '<b>Go deep early.</b> Share something real in the first hour and the other person will match you. It is the fastest route from stranger to friend, and it is why some people make close friends in weeks.', '<b>For the startup:</b> the 10-second, 30-second and 2-minute version. Test all three at Saturday meetups. If eyes move, it is too long.', SPEAK_HOW_V11],
     milestones: [[6, 'Story bank at 5'], [12, 'Ten stories, rehearsed out loud'], [24, 'You can hold a room']] },
 
   { id: 'dj', name: 'DJing', aim: "Play at a friend's party by late December.",
@@ -268,7 +303,7 @@ export const SEED_PLANS: Plan[] = [
   { id: 'style', name: 'Clothes and grooming', aim: 'Three outfits that always work. Not a new wardrobe.',
     when: ['Wed 18:30 errands + grooming, every other week', 'Weeks 5–6: reference board', 'Week 7: tailor', 'Weeks 8–20: one or two items a month'],
     where: ['Marathahalli factory outlets. A local tailor, ₹150–400 an alteration. Online: Snitch, Bonkers Corner, H&M, Uniqlo.'],
-    how: ["<b>Step 1.</b> Save 50 outfits you like, on tall lean men. Look for what repeats — that is your taste.", '<b>Step 2.</b> Fit before buying. At 6\'3" your problem is length. Take five things you own to a tailor. Five tailored items beat ten new ones, for ₹1,500.', '<b>Step 3.</b> Three uniforms. Plain heavy tee + straight trousers + clean sneakers · overshirt over a tee + trousers · polo + chinos.', '<b>Step 4.</b> Replace in order: shoes, trousers, good plain tees, one overshirt.', 'Skip oversized. On 6\'3" and 80 kg it reads as a tent.', 'Retire cargos from anything social.', 'One barber, every three weeks. Beard shaped professionally once. One fragrance.'],
+    how: ["<b>Step 1.</b> Save 50 outfits you like, on tall lean men. Look for what repeats — that is your taste.", '<b>Step 2.</b> Fit before buying. At 6\'3" your problem is length. Take five things you own to a tailor. Five tailored items beat ten new ones, for ₹1,500.', '<b>Step 3.</b> Three uniforms. Plain heavy tee + straight trousers + clean sneakers · overshirt over a tee + trousers · polo + chinos.', '<b>Step 4.</b> Replace in order: shoes, trousers, good plain tees, one overshirt.', 'Skip oversized. On 6\'3" and 80 kg it reads as a tent.', 'Retire cargos from anything social.', 'One barber, every three weeks. Beard shaped professionally once. One fragrance.', STYLE_HOW_V11],
     milestones: [[7, 'Board done, five items tailored'], [14, 'Three uniforms working'], [24, 'You get told you dress well']] },
 
   { id: 'money', name: 'Money and the flat', aim: 'Save about ₹47k a month. Move by 1 December.',
@@ -276,17 +311,20 @@ export const SEED_PLANS: Plan[] = [
     where: ['Zone A and slightly toward Kadubeesanahalli — Marathahalli, AECS Layout, Munnekolala, Doddanekkundi, Kundalahalli. Do not move further from the office; ORR roadworks run October to January.'],
     how: ['Rough month: PG or flat 20–25k · food outside PG 9k · bus tickets and autos 2.5k · social 8k · skin and grooming 2.5k · clothes 3k · swimming and italki 3.5k · buffer 3k.', 'Bus: individual tickets, ₹15–25 a trip, roughly ₹1,200–1,500 a month.', '2BHK in that belt is roughly ₹30–45k, so ₹15–23k each. Add ₹4–6k for food once PG meals go.', 'Keep ₹1.5–2.5 lakh liquid for the deposit.'],
     milestones: [[5, 'Search started'], [11, 'Moved in'], [24, '~₹2.35 lakh saved']] },
+
+  PRESENCE_PLAN,
 ];
 
-export const SEED_CHECKS: [string, string, string][] = [
-  ['gym', 'Gym done', 'Mon–Fri'],
-  ['startup', 'Startup block done', 'Tue, Thu evening, Sat'],
+export const SEED_CHECKS: Check[] = [
+  ['gym', 'Gym done', 'Mon–Fri', [1, 2, 3, 4, 5]],
+  ['startup', 'Startup block done', 'Tue, Thu evening, Sat', [2, 4, 6]],
   ['protein', '100g+ protein', ''],
-  ['out', 'Got out of the room', 'Mon, Fri, Sat'],
+  ['out', 'Got out of the room', 'Mon, Fri, Sat', [1, 5, 6]],
   ['record', 'Voice note recorded', '5 min, listen back once'],
-  ['russian', 'Russian, 20 min', 'Weekdays, on the bus'],
+  ['russian', 'Russian, 20 min', 'Weekdays, on the bus', [1, 2, 3, 4, 5]],
   ['read', 'Read', ''],
   ['skin', 'Skin routine, AM + PM', ''],
+  PREOUT_CHECK,
 ];
 
 export const SEED_COUNTS: [string, string][] = [
@@ -308,6 +346,7 @@ export const SEED_TASKS: Omit<Task, 'id' | 'createdAt' | 'status'>[] = [
   { title: 'Build the style reference board', detail: 'Save 50 outfits you like, on tall lean men. Look for what repeats.', planId: 'style', triggerWeek: 4 },
   { title: 'Take five items to a tailor', detail: 'Five tailored items beat ten new ones, for about ₹1,500.', planId: 'style', triggerWeek: 6 },
   { title: 'Shoot the real photo set', detail: '200 shots, keep six — clear face, full body, doing something, with friends, a place with character, personality.', planId: 'dating', triggerWeek: 18 },
+  ...NEW_TASKS_V11,
 ];
 
 /**
