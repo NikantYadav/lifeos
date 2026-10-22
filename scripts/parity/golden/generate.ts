@@ -174,7 +174,7 @@ const minimal: AppState = {
 // sunday start + counts that overlap CHECK_GOALS (double counting)
 const sunStart: AppState = clone(seed);
 sunStart.startDate = '2026-09-20';
-sunStart.counts = [...sunStart.counts, ['out', 'Out count'], ['gym', 'Gym count']];
+(sunStart as unknown as { counts: unknown[] }).counts = [...(sunStart as unknown as { counts: unknown[] }).counts, ['out', 'Out count'], ['gym', 'Gym count']];
 sunStart.days = makeDays('2026-09-10', '2026-11-30', 0.8);
 setRun(sunStart.days, 'out', '2026-09-28', '2026-10-08');
 sunStart.days['2026-09-29'].n.out = 2;

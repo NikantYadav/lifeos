@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict';
 import { sanitizeDiffs, parseCadence } from '../src/lib/diffs';
 import { buildChatContext, buildSystemPrompt, trimMessages, CHAT_RESPONSE_SCHEMA } from '../src/lib/chat';
-import { SEED_CHECKS, SEED_PLANS, SEED_SCHEDULE, SEED_COUNTS, SEED_WEEK_GOALS } from '../src/lib/data';
+import { SEED_CHECKS, SEED_PLANS, SEED_SCHEDULE, SEED_WEEK_GOALS } from '../src/lib/data';
 import { EMPTY_STATE, AppState } from '../src/lib/types';
 
 const state: AppState = structuredClone({ ...EMPTY_STATE });
 state.plans = structuredClone(SEED_PLANS);
 state.schedule = structuredClone(SEED_SCHEDULE);
 state.checks = structuredClone(SEED_CHECKS);
-state.counts = structuredClone(SEED_COUNTS);
 state.weekGoals = { ...SEED_WEEK_GOALS };
 state.tasks = [{ id: 't1', title: 'x', detail: '', triggerWeek: 0, status: 'pending', createdAt: 1 }];
 state.habits = [{ id: 'h1', title: 'y', cadence: { kind: 'everyNDays', n: 2 }, createdAt: 1 }];
@@ -192,23 +191,8 @@ for (const bad of [
 ]) assert.equal(run({ kind: 'check', ...bad, reason: '' }).length, 0, JSON.stringify(bad));
 assert.equal(sanitizeDiffs([{ kind: 'check', op: 'remove', key: ck[0], reason: '' }], ids).length, 0);
 
-// count
-const cn = state.counts[0];
-state.weekGoals[cn[0]] = 5;
-r = run({ kind: 'count', op: 'add', key: 'pushups', label: 'Push-ups', weekGoal: 300, reason: '' });
-assert.deepEqual(r[0].after, ['pushups', 'Push-ups']); assert.equal(r[0].before, null); assert.equal(r[0].weekGoal, 300);
-r = run({ kind: 'count', op: 'add', key: 'pushups', label: 'Push-ups', reason: '' });
-assert.equal(r[0].weekGoal, undefined);
-r = run({ kind: 'count', op: 'remove', key: cn[0], reason: '' });
-assert.deepEqual(r[0].before, cn); assert.equal(r[0].after, null); assert.equal(r[0].weekGoal, 5);
-for (const bad of [
-  { op: 'add', key: cn[0], label: 'x' }, { op: 'add', key: 'Nope!', label: 'x' }, { op: 'add', key: 'okk' },
-  { op: 'add', key: 'okk', label: 'x', weekGoal: 0 }, { op: 'add', key: 'okk', label: 'x', weekGoal: -1 }, { op: 'add', key: 'okk', label: 'x', weekGoal: 'a' },
-  { op: 'remove', key: 'ghost' }, { op: 'update', key: cn[0], label: 'x' },
-]) assert.equal(run({ kind: 'count', ...bad, reason: '' }).length, 0, JSON.stringify(bad));
-
 // log: check
-state.days['2026-10-21'] = { c: { [ck[0]]: true }, n: { [cn[0]]: 3 } };
+state.days['2026-10-21'] = { c: { [ck[0]]: true }, n: {} };
 r = runN({ kind: 'log', target: 'check', date: '2026-10-21', key: ck[0], done: false, before: 'x', reason: '' });
 assert.equal(r[0].before, true); assert.equal(r[0].after, false); assert.equal(r[0].done, false);
 r = runN({ kind: 'log', target: 'check', date: '2026-10-22', key: ck[0], done: true, reason: '' });
@@ -219,12 +203,6 @@ for (const bad of [{ key: 'ghost', done: true }, { key: ck[0] }, { key: ck[0], d
 // dates: window today-14..today
 for (const [dt, ok] of [['2026-10-22', 1], ['2026-10-08', 1], ['2026-10-07', 0], ['2026-10-23', 0], ['2026-02-30', 0], ['22-10-2026', 0], [undefined, 0]] as const)
   assert.equal(runN({ kind: 'log', target: 'check', date: dt, key: ck[0], done: true, reason: '' }).length, ok, String(dt));
-// log: count (absolute), before filled from state
-r = runN({ kind: 'log', target: 'count', date: '2026-10-21', key: cn[0], value: 5, reason: '' });
-assert.equal(r[0].before, 3); assert.equal(r[0].after, 5); assert.equal(r[0].value, 5);
-assert.equal(runN({ kind: 'log', target: 'count', date: '2026-10-22', key: cn[0], value: 0, reason: '' })[0].before, 0);
-for (const bad of [{ key: 'ghost', value: 1 }, { key: cn[0], value: -1 }, { key: cn[0] }, { key: cn[0], value: 'a' }, { key: cn[0], value: NaN }])
-  assert.equal(runN({ kind: 'log', target: 'count', date: '2026-10-22', ...bad, reason: '' }).length, 0, JSON.stringify(bad));
 // log: weight
 r = runN({ kind: 'log', target: 'weight', date: '2026-10-22', kg: 80.4, reason: '' });
 assert.equal(r[0].before, null); assert.equal(r[0].after, 80.4);
@@ -265,12 +243,12 @@ assert.equal(sanitizeDiffs([{ kind: 'check', op: 'remove', key: 'ghost', reason:
 const ctx2 = buildChatContext(state, NOW);
 assert.deepEqual(ctx2.approachesLast14DaysByOutcome, { good: 1 });
 assert.equal(ctx2.recentWeights.length, 5);
-assert.ok(ctx2.counts.every((c) => 'weekGoal' in c));
+assert.ok(!('counts' in ctx2));
 assert.equal(ctx2.last14Days['2026-10-21'].checks[ck[0]], true);
 assert.deepEqual(ctx2.plans[0].milestones, [{ week: 3, description: 'Three things' }, { week: 6, description: 'Six things' }]);
 assert.equal(ctx2.milestoneCheckIns.length, 1);
 assert.ok(buildSystemPrompt(state, NOW).includes('current week index is ' + ctx2.now.weekIndex));
-for (const k of ['newPlan', 'check', 'count', 'log', 'milestoneCheck', 'milestones', 'person', 'approach']) assert.ok(JSON.stringify(CHAT_RESPONSE_SCHEMA).includes(k), k);
+for (const k of ['newPlan', 'check', 'log', 'milestoneCheck', 'milestones', 'person', 'approach']) assert.ok(JSON.stringify(CHAT_RESPONSE_SCHEMA).includes(k), k);
 assert.ok(!JSON.stringify(CHAT_RESPONSE_SCHEMA).includes('"bad"'));
 
 // trimming
@@ -280,3 +258,8 @@ const t = trimMessages(many);
 assert.ok(t.length <= 30 && t[0].role === 'user' && t[t.length - 1].text.endsWith('last'));
 
 console.log('check-chat: ok');
+
+// counters are gone: 'count' diffs and log target 'count' are dropped.
+assert.equal(sanitizeDiffs([{ kind: 'count', op: 'add', key: 'pushups', label: 'P', reason: '' }], chatN).length, 0);
+assert.equal(sanitizeDiffs([{ kind: 'log', target: 'count', date: '2026-10-22', key: 'x', value: 1, reason: '' }], chatN).length, 0);
+console.log('check-chat counters: ok');

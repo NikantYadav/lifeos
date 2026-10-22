@@ -25,7 +25,6 @@ function draftOf(prev: AppState): AppState {
     ),
     weekGoals: { ...prev.weekGoals },
     checks: prev.checks.map((c) => [...c] as typeof c),
-    counts: prev.counts.map((c) => [...c] as typeof c),
 
     tasks: prev.tasks.map((t) => ({ ...t })),
     habits: prev.habits.map((h) => ({ ...h, cadence: { ...h.cadence } })),

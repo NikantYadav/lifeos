@@ -24,9 +24,6 @@ export default function RepsPanel({
     if (!wh && !op) return;
     update((draft) => {
       draft.approaches.push({ id: newId(), date: todayKey, where: wh, opener: op, out, lesson: lesson.trim() });
-      const d = draft.days[todayKey] ?? { c: {}, n: {} };
-      d.n = { ...d.n, approaches: (d.n.approaches || 0) + 1 };
-      draft.days[todayKey] = d;
     });
     setWhere('');
     setOpener('');

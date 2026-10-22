@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { migrateState, CURRENT_SEED_VERSION } from '../src/lib/migrate';
-import { SEED_CHECKS, SEED_PLANS, SEED_SCHEDULE, SEED_TASKS, NEW_MORNING_NOTE, OLD_MORNING_NOTE, SEED_WEEK_GOALS, SEED_COUNTS, SEED_HABITS } from '../src/lib/data';
+import { SEED_CHECKS, SEED_PLANS, SEED_SCHEDULE, SEED_TASKS, NEW_MORNING_NOTE, OLD_MORNING_NOTE, SEED_WEEK_GOALS, SEED_HABITS } from '../src/lib/data';
 import { parseState } from '../src/lib/validate';
 import { EMPTY_STATE, AppState } from '../src/lib/types';
 
@@ -11,8 +11,7 @@ for (const p of v10.plans) if (p.how) p.how = p.how.filter((h) => !/Voice, pace,
 v10.schedule = structuredClone(SEED_SCHEDULE);
 for (const d of [1, 2, 3, 4, 5]) for (const r of v10.schedule[d][1]) if (r[0] === '08:35') r[2] = OLD_MORNING_NOTE;
 v10.checks = SEED_CHECKS.filter((c) => c[0] !== 'preout').map((c) => [c[0], c[1], c[2]]);
-v10.counts = structuredClone(SEED_COUNTS);
-v10.weekGoals = { ...SEED_WEEK_GOALS };
+v10.weekGoals = { ...SEED_WEEK_GOALS, convos: 5, approaches: 3, pages: 200 };
 v10.habits = SEED_HABITS.map((h, i) => ({ ...h, id: 'h' + i, createdAt: 1 }));
 v10.tasks = SEED_TASKS.filter((t) => !/signature story|standout piece|solo trip/.test(t.title)).map((t, i) => ({ ...t, id: 't' + i, createdAt: 1, status: 'pending' as const }));
 const edited = structuredClone(v10);
@@ -59,3 +58,16 @@ assert.equal(fresh.plans.find((p) => p.id === 'speak')!.how!.filter((h) => h.inc
 const p = parseState({ checks: [['a', 'A', 's', [3, 1, 1, 9, -1, 2.5, 'x', 0]], ['b', 'B', 's', []], ['c', 'C', 's', 'nope'], ['d', 'D', 's', [7]], ['e', 'E']] });
 assert.deepEqual(p.checks, [['a', 'A', 's', [0, 1, 3]], ['b', 'B', 's'], ['c', 'C', 's'], ['d', 'D', 's'], ['e', 'E', '']]);
 console.log('all ok');
+
+// v12: counter goals dropped, check goals kept.
+const m12 = migrateState(structuredClone(v10));
+assert.deepEqual(Object.keys(m12.weekGoals).sort(), ['gym', 'out', 'protein']);
+console.log('v12 ok');
+
+// v13: counter numbers deleted from past days, habit counts kept.
+const v12 = structuredClone(m12);
+v12.seedVersion = 12;
+v12.days = { '2026-10-01': { c: { gym: true }, n: { convos: 3, approaches: 1, 'habit:h0': 2 } } };
+const m13 = migrateState(v12);
+assert.deepEqual(m13.days['2026-10-01'], { c: { gym: true }, n: { 'habit:h0': 2 } });
+console.log('v13 ok');

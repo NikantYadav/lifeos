@@ -118,7 +118,6 @@ export function buildChatContext(state: AppState, now: Date) {
       days: days && days.length ? days : 'every day',
     })),
     scheduleKeyBlockKeys: keyBlockKeys,
-    counts: state.counts.map(([key, label]) => ({ key, label, weekGoal: state.weekGoals[key] ?? null })),
     weekGoals: state.weekGoals,
     pendingTasks: state.tasks
       .filter((t) => t.status === 'pending')
@@ -148,25 +147,23 @@ Diff kinds (each needs a short "reason"; fill "before"/"after" as short text for
 2. "plan" — change an existing plan's aim, when, where, how, quota or warn (set planId and field; before/after as text). For field "milestones" use the structured "milestones" array instead of "after": the COMPLETE replacement list [{week, description}], weeks 0-30 (0-based, see weekNumberConvention), descriptions max 200 chars, max 20 entries. Milestones are always a full-list replacement: start from the plan's current milestones in DATA, add/edit/remove entries, and send the whole result.
 3. "newPlan" — a brand-new plan. ONLY when the user explicitly asks to create a plan. Set "plan": {id (lowercase a-z 0-9 and "-", 2-32 chars, not an existing plan id), name, aim, optional when/where/how/quota (string arrays), warn, milestones [{week, description}]}. Never include "bad" or "ask".
 4. "schedule" — change a day's label (set dayOfWeek; before/after text). Use scheduleRow for row edits.
-5. "weekGoals" — change the weekly target of an EXISTING counter. Set key (from weekGoals); before and after are the numbers as strings.
+5. "weekGoals" — change an existing weekly target (days per week for gym, out, protein). Set key (from weekGoals); before and after are the numbers as strings.
 6. "task" — op "add" (title, detail, triggerWeek 0-based, optional planId), "drop" or "retime" (existingId from pendingTasks; retime also needs triggerWeek).
 7. "habit" — op "add" (title, optional planId, optional cadence), "drop" (existingId from habits), or "retime" (existingId from habits plus a required new cadence). cadence is {kind "everyNDays", n} | {kind "weeklyOnDays", days [0-6]} | {kind "everyNWeeks", n}.
 8. "check" — the daily checklist. op "add" (key = new lowercase slug a-z 0-9 "-" 2-32 chars not already a check key, label, optional sub, optional days = weekdays 0=Sunday..6 the check is due; omit for every day), "update" (existing key; give only the fields that change; days null = make it daily), "remove" (existing key).
-9. "count" — daily counters. op "add" (new slug key, label, optional weekGoal > 0 for the weekly target) or "remove" (existing key; its weekly goal is deleted too). To change the goal of an existing counter use "weekGoals", not "count".
-10. "log" — log something on the user's behalf. ONLY when the user says they did something (or asks you to log it), never from a plan or an assumption. Still a proposal the user accepts. Set "target" and "date" (YYYY-MM-DD, today or up to 14 days back; resolve "yesterday"/"on Tuesday" from now.date):
+9. "log" — log something on the user's behalf. ONLY when the user says they did something (or asks you to log it), never from a plan or an assumption. Still a proposal the user accepts. Set "target" and "date" (YYYY-MM-DD, today or up to 14 days back; resolve "yesterday"/"on Tuesday" from now.date):
    - target "check": key (an existing check key, or a key in scheduleKeyBlockKeys) and done true/false.
-   - target "count": key (an existing counter) and value = the ABSOLUTE new total for that date, not a delta. Compute it from DATA (last14Days counts for that date; missing = 0): "did 2 more approaches today" with 1 logged already -> value 3.
    - target "person": person {name, optional where, stage 1-4, last (date)}. To update someone already in people, include their id. Without an id it creates a new person.
    - target "weight": kg (30-250).
    - target "approach": approach {where, opener, out one of bailed|short|good|ig|closed, lesson}.
-11. "milestoneCheck" — record how a plan milestone went: planId, week (must be an existing milestone week of that plan), status "hit"|"partial"|"missed", optional note. Only when the user tells you the result.
+10. "milestoneCheck" — record how a plan milestone went: planId, week (must be an existing milestone week of that plan), status "hit"|"partial"|"missed", optional note. Only when the user tells you the result.
 
 Rules:
 - Never propose changes to a plan's "bad" or "ask" fields; they are fixed and not shown to you.
 - Never create a new plan unless the user asks for one. Never invent ids or keys for existing things: ids and keys for edit/drop/retime/log/update/remove must come from DATA.
 - Log only what the user states they did. Do not log on your own initiative.
 - When a change applies to several days, emit one diff per day.
-- If a request is ambiguous (which day, which row, which counter, what value, what time), ask one short clarifying question and propose nothing.
+- If a request is ambiguous (which day, which row, what value, what time), ask one short clarifying question and propose nothing.
 - Resolve relative dates ("tomorrow", "next week") from the current date/time in DATA. Week numbers follow weekNumberConvention in DATA; the current week index is ${weekIndexNow(state, now)}.
 
 DATA:
@@ -208,7 +205,7 @@ export const CHAT_RESPONSE_SCHEMA = {
         properties: {
           kind: {
             type: 'string',
-            enum: ['plan', 'schedule', 'weekGoals', 'task', 'habit', 'scheduleRow', 'newPlan', 'check', 'count', 'log', 'milestoneCheck'],
+            enum: ['plan', 'schedule', 'weekGoals', 'task', 'habit', 'scheduleRow', 'newPlan', 'check', 'log', 'milestoneCheck'],
           },
           op: { type: 'string', enum: ['add', 'drop', 'retime', 'update', 'remove'] },
           planId: { type: 'string' },
@@ -248,13 +245,12 @@ export const CHAT_RESPONSE_SCHEMA = {
             },
             required: ['id', 'name', 'aim'],
           },
-          // check / count
+          // check
           label: { type: 'string' },
           sub: { type: 'string' },
           days: { type: 'array', items: { type: 'integer' }, nullable: true },
-          weekGoal: { type: 'number' },
           // log
-          target: { type: 'string', enum: ['check', 'count', 'person', 'weight', 'approach'] },
+          target: { type: 'string', enum: ['check', 'person', 'weight', 'approach'] },
           date: { type: 'string' },
           done: { type: 'boolean' },
           value: { type: 'number' },

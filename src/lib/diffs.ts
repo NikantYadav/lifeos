@@ -24,7 +24,7 @@ const SLUG_RE = /^[a-z0-9-]{2,32}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const OUTCOMES = new Set(['bailed', 'short', 'good', 'ig', 'closed']);
 const STATUSES = new Set(['hit', 'partial', 'missed']);
-const LOG_TARGETS = new Set(['check', 'count', 'person', 'weight', 'approach']);
+const LOG_TARGETS = new Set(['check', 'person', 'weight', 'approach']);
 
 const isInt = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v);
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -253,30 +253,6 @@ function sanitizeCheck(obj: Record<string, unknown>, state: AppState, taken: Set
   return { kind: 'check', op, key, label, sub, days: nextDays && nextDays.length ? nextDays : null, before: cur, after: tuple, reason };
 }
 
-function sanitizeCount(obj: Record<string, unknown>, state: AppState, taken: Set<string>): ProposedDiff | null {
-  if (obj.op !== 'add' && obj.op !== 'remove') return null;
-  const op = obj.op;
-  if (typeof obj.key !== 'string') return null;
-  const key = obj.key;
-  const cur = state.counts.find((c) => c[0] === key);
-  const reason = reasonOf(obj);
-  if (op === 'remove') {
-    if (!cur) return null;
-    const goal = state.weekGoals[key];
-    return { kind: 'count', op, key, ...(isNum(goal) ? { weekGoal: goal } : {}), before: cur, after: null, reason };
-  }
-  if (!SLUG_RE.test(key) || cur || taken.has(key)) return null;
-  const label = clean(obj.label, 100);
-  if (!label) return null;
-  let weekGoal: number | undefined;
-  if (obj.weekGoal !== undefined && obj.weekGoal !== null) {
-    if (!isNum(obj.weekGoal) || obj.weekGoal <= 0) return null;
-    weekGoal = obj.weekGoal;
-  }
-  taken.add(key);
-  return { kind: 'count', op, key, label, ...(weekGoal !== undefined ? { weekGoal } : {}), before: null, after: [key, label], reason };
-}
-
 function sanitizeLog(obj: Record<string, unknown>, state: AppState, now: Date): ProposedDiff | null {
   if (typeof obj.target !== 'string' || !LOG_TARGETS.has(obj.target)) return null;
   const target = obj.target as NonNullable<ProposedDiff['target']>;
@@ -293,11 +269,6 @@ function sanitizeLog(obj: Record<string, unknown>, state: AppState, now: Date): 
     for (const rows of Object.values(state.schedule)) for (const r of rows[1]) if (r[3] && r[4]) keys.add(r[4]);
     if (!keys.has(obj.key)) return null;
     return { ...base, key: obj.key, done: obj.done, before: state.days[date]?.c[obj.key] === true, after: obj.done };
-  }
-  if (target === 'count') {
-    if (typeof obj.key !== 'string' || !state.counts.some((c) => c[0] === obj.key)) return null;
-    if (!isNum(obj.value) || obj.value < 0 || obj.value > 1e6) return null;
-    return { ...base, key: obj.key, value: obj.value, before: state.days[date]?.n[obj.key] ?? 0, after: obj.value };
   }
   if (target === 'weight') {
     if (!isNum(obj.kg) || obj.kg < 30 || obj.kg > 250) return null;
@@ -386,7 +357,7 @@ export function sanitizeDiffs(diffs: unknown, opts: SanitizeOptions): ProposedDi
   const { taskIds, habitIds, state } = opts;
   const plans = state?.plans ?? opts.plans;
   const now = opts.now ?? new Date();
-  const takenPlans = new Set<string>(), takenChecks = new Set<string>(), takenCounts = new Set<string>();
+  const takenPlans = new Set<string>(), takenChecks = new Set<string>();
   const out: ProposedDiff[] = [];
   const push = (d: ProposedDiff | null) => {
     if (d) out.push(d);
@@ -404,7 +375,6 @@ export function sanitizeDiffs(diffs: unknown, opts: SanitizeOptions): ProposedDi
       if (obj.kind === 'scheduleRow') push(sanitizeScheduleRow(obj, state));
       else if (obj.kind === 'newPlan') push(sanitizeNewPlan(obj, state, takenPlans));
       else if (obj.kind === 'check') push(sanitizeCheck(obj, state, takenChecks));
-      else if (obj.kind === 'count') push(sanitizeCount(obj, state, takenCounts));
       else if (obj.kind === 'log') push(sanitizeLog(obj, state, now));
       else if (obj.kind === 'milestoneCheck') push(sanitizeMilestoneCheck(obj, state));
       else if (obj.kind === 'habit' && obj.op === 'retime') push(sanitizeHabitRetime(obj, state));

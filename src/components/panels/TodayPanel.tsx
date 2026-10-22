@@ -146,15 +146,6 @@ export default function TodayPanel({
     });
   };
 
-  const bumpCount = (k: string, delta: number) => {
-    update((draft) => {
-      const d = draft.days[todayKey] ?? { c: {}, n: {} };
-      const cur = d.n[k] || 0;
-      d.n = { ...d.n, [k]: Math.max(0, Math.round((cur + delta) * 10) / 10) };
-      draft.days[todayKey] = d;
-    });
-  };
-
   const activities = buildActivities(rows, state.checks, state.plans);
   const doneCount = activities.filter((a) => day.c[a.key]).length;
   // Not-done first, done sunk to the bottom — stable within each group so
@@ -192,27 +183,6 @@ export default function TodayPanel({
       <TaskList state={state} update={update} todayKey={todayKey} curWeek={curWeek} />
       <HabitList state={state} update={update} todayKey={todayKey} today={now ?? new Date(0)} />
       <MilestonePrompt state={state} update={update} todayKey={todayKey} today={now ?? new Date(0)} />
-
-      <h2>Count</h2>
-      <div className="counters">
-        {state.counts.map(([k, lbl]) => {
-          const v = day.n[k] || 0;
-          const step = k === 'pages' ? 10 : k === 'hours' ? 0.5 : 1;
-          const shown = k === 'hours' ? v.toFixed(1) : String(v);
-          return (
-            <div className="ctr" key={k}>
-              <div className="lbl" id={`ctr-${k}`}>{lbl}</div>
-              <div className="row">
-                <div className="val">{shown}</div>
-                <div className="btns">
-                  <button onClick={() => bumpCount(k, -step)} aria-label={`Decrease ${lbl}`}>−</button>
-                  <button onClick={() => bumpCount(k, step)} aria-label={`Increase ${lbl}`}>+</button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
 
       <details className="day-details">
         <summary>Show full day — {label} (week {week})</summary>

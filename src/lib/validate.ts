@@ -179,13 +179,6 @@ function check(v: unknown): Check | null {
   return days ? [key, str(v[1]), str(v[2]), days] : [key, str(v[1]), str(v[2])];
 }
 
-function stringPair(v: unknown): [string, string] | null {
-  if (!Array.isArray(v) || v.length < 2) return null;
-  const key = str(v[0]).trim();
-  if (!key) return null;
-  return [key, str(v[1])];
-}
-
 function milestoneList(v: unknown): [number, string][] | undefined {
   if (!Array.isArray(v)) return undefined;
   const out: [number, string][] = [];
@@ -424,7 +417,6 @@ export function parseState(input: unknown): AppState {
     schedule: weekSchedule(input.schedule) ?? {},
     weekGoals: numberRecord(input.weekGoals),
     checks: collect(input.checks, check),
-    counts: collect(input.counts, stringPair),
     seedVersion: seedVersion !== null && seedVersion >= 0 ? Math.floor(seedVersion) : 0,
 
     tasks: collect(input.tasks, task),

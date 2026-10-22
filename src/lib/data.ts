@@ -327,13 +327,7 @@ export const SEED_CHECKS: Check[] = [
   PREOUT_CHECK,
 ];
 
-export const SEED_COUNTS: [string, string][] = [
-  ['convos', 'Conversations'], ['approaches', 'Approaches'], ['ig', 'Instagram exchanges'],
-  ['invites', 'Invites sent'], ['followups', 'Follow-ups'], ['pages', 'Pages read'], ['hours', 'Startup hours'],
-];
-
 export const SEED_WEEK_GOALS: Record<string, number> = {
-  convos: 5, approaches: 3, ig: 2, invites: 1, followups: 1, pages: 200, hours: 7,
   gym: 5, out: 4, protein: 6,
 };
 

@@ -129,7 +129,7 @@ export interface MilestoneCheckIn {
  * nothing here writes to AppState until the user applies it.
  */
 export interface ProposedDiff {
-  kind: 'plan' | 'schedule' | 'weekGoals' | 'task' | 'habit' | 'scheduleRow' | 'newPlan' | 'check' | 'count' | 'log' | 'milestoneCheck';
+  kind: 'plan' | 'schedule' | 'weekGoals' | 'task' | 'habit' | 'scheduleRow' | 'newPlan' | 'check' | 'log' | 'milestoneCheck';
   planId?: string;
   field?: 'aim' | 'when' | 'where' | 'how' | 'quota' | 'warn' | 'milestones';
   dayOfWeek?: number;
@@ -164,7 +164,7 @@ export interface ProposedDiff {
   weekGoal?: number;
 
   /** log: what is being logged, and for which day (YYYY-MM-DD). */
-  target?: 'check' | 'count' | 'person' | 'weight' | 'approach';
+  target?: 'check' | 'person' | 'weight' | 'approach';
   date?: string;
   done?: boolean;
   /** log count: ABSOLUTE new value for the day. */
@@ -245,7 +245,6 @@ export interface AppState {
   schedule: WeekSchedule;
   weekGoals: WeekGoals;
   checks: Check[];
-  counts: [key: string, label: string][];
   /** Drives the one-time data.ts -> state seed migration. */
   seedVersion: number;
 
@@ -272,7 +271,6 @@ export const EMPTY_STATE: AppState = {
   schedule: {},
   weekGoals: {},
   checks: [],
-  counts: [],
   seedVersion: 0,
   tasks: [],
   habits: [],

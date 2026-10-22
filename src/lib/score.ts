@@ -17,7 +17,6 @@ export function weekTotals(state: AppState, wi: number): Record<string, number> 
   weekDates(wi, state.startDate).forEach((key) => {
     const day = state.days[key];
     if (!day) return;
-    state.counts.forEach(([ck]) => (totals[ck] = (totals[ck] ?? 0) + (day.n?.[ck] ?? 0)));
     CHECK_GOALS.forEach((ck) => {
       if (day.c?.[ck]) totals[ck] = (totals[ck] ?? 0) + 1;
     });

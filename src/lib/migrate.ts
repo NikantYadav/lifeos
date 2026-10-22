@@ -9,7 +9,6 @@ import {
   PREOUT_CHECK,
   PRESENCE_PLAN,
   SEED_CHECKS,
-  SEED_COUNTS,
   SEED_HABITS,
   SEED_PLANS,
   SEED_SCHEDULE,
@@ -24,7 +23,7 @@ import { AppState, newId } from './types';
 import { iso } from './dates';
 
 /** Bump when the seed shape in data.ts changes, to re-run migration once more. */
-export const CURRENT_SEED_VERSION = 11;
+export const CURRENT_SEED_VERSION = 13;
 
 /**
  * Titles removed from SEED_TASKS/SEED_HABITS after some deployments had
@@ -95,7 +94,6 @@ export function migrateState(state: AppState): AppState {
     schedule: Object.keys(state.schedule).length ? state.schedule : structuredClone(SEED_SCHEDULE),
     weekGoals: Object.keys(state.weekGoals).length ? state.weekGoals : { ...SEED_WEEK_GOALS },
     checks: state.checks.length ? state.checks : structuredClone(SEED_CHECKS),
-    counts: state.counts.length ? state.counts : structuredClone(SEED_COUNTS),
     tasks: state.tasks.length
       ? state.tasks
       : SEED_TASKS.map((t) => ({ ...t, id: newId(), createdAt: Date.now(), status: 'pending' as const })),
@@ -200,6 +198,25 @@ export function migrateState(state: AppState): AppState {
    * tasks only if no task shares the title, checks' `days` only where unset,
    * and schedule notes only where the stored text still equals the old seed.
    */
+  if (state.seedVersion < 13) {
+    // Counters were removed: drop their logged numbers from every day. Only habit completion
+    // counts ("habit:<id>") live in days[].n now.
+    seeded.days = Object.fromEntries(
+      Object.entries(seeded.days).map(([k, d]) => [
+        k,
+        { ...d, n: Object.fromEntries(Object.entries(d.n ?? {}).filter(([nk]) => nk.startsWith('habit:'))) },
+      ])
+    );
+  }
+
+  if (state.seedVersion < 12) {
+    // Counters were removed. Weekly goals now only exist for checks (gym, out, protein); goals
+    // that belonged to counters are dropped. Past per-day numbers in days[].n are left alone.
+    seeded.weekGoals = Object.fromEntries(
+      Object.entries(seeded.weekGoals).filter(([k]) => seeded.checks.some((c) => c[0] === k))
+    );
+  }
+
   if (state.seedVersion < 11) {
     if (!seeded.plans.some((p) => p.id === PRESENCE_PLAN.id)) {
       seeded.plans = [...seeded.plans, structuredClone(PRESENCE_PLAN)];
