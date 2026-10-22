@@ -36,7 +36,7 @@ export async function POST() {
     return NextResponse.json({
       narrative: String(result.narrative ?? ''),
       pattern: String(result.pattern ?? ''),
-      proposedDiffs: sanitizeDiffs(result.proposedDiffs, { taskIds: existingTaskIds, habitIds: existingHabitIds }),
+      proposedDiffs: sanitizeDiffs(result.proposedDiffs, { taskIds: existingTaskIds, habitIds: existingHabitIds, plans: state.plans }),
     });
   } catch {
     return NextResponse.json({ error: 'Could not generate review.' }, { status: 502 });

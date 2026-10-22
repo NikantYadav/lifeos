@@ -129,7 +129,7 @@ export interface MilestoneCheckIn {
  * nothing here writes to AppState until the user applies it.
  */
 export interface ProposedDiff {
-  kind: 'plan' | 'schedule' | 'weekGoals' | 'task' | 'habit' | 'scheduleRow';
+  kind: 'plan' | 'schedule' | 'weekGoals' | 'task' | 'habit' | 'scheduleRow' | 'newPlan' | 'check' | 'count' | 'log' | 'milestoneCheck';
   planId?: string;
   field?: 'aim' | 'when' | 'where' | 'how' | 'quota' | 'warn' | 'milestones';
   dayOfWeek?: number;
@@ -149,12 +149,66 @@ export interface ProposedDiff {
   index?: number;
   /** scheduleRow add/update: the new row, [time, title, note, isKeyBlock 0|1, planId|null, week A|B|null]. */
   row?: [time: string, title: string, note: string, isKeyBlock: number, planId: string | null, week: AltWeek | null];
-  /** habit add only (chat): optional cadence; client defaults to weekly when absent. */
+  /** habit add (optional; client defaults to weekly) and habit retime (required), chat only. */
   cadence?: HabitCadence;
+
+  /** newPlan: the full new plan (never carries bad/ask). `after` is the same object. */
+  plan?: NewPlanFields;
+
+  /** check/count: 'add' | 'update' | 'remove' (count has no update). `key` holds the check/count key. */
+  label?: string;
+  sub?: string;
+  /** check add/update: weekdays 0 = Sunday..6, or null = daily. */
+  days?: number[] | null;
+  /** count add: optional weekly goal; count remove: the goal being deleted (if any). */
+  weekGoal?: number;
+
+  /** log: what is being logged, and for which day (YYYY-MM-DD). */
+  target?: 'check' | 'count' | 'person' | 'weight' | 'approach';
+  date?: string;
+  done?: boolean;
+  /** log count: ABSOLUTE new value for the day. */
+  value?: number;
+  kg?: number;
+  person?: LogPerson;
+  approach?: LogApproach;
+
+  /** milestoneCheck. `description` is the server-filled milestone text snapshot. */
+  week?: number;
+  status?: MilestoneStatus;
+  note?: string;
+  description?: string;
 
   before: unknown;
   after: unknown;
   reason: string;
+}
+
+export interface NewPlanFields {
+  id: string;
+  name: string;
+  aim: string;
+  when?: string[];
+  where?: string[];
+  how?: string[];
+  quota?: string[];
+  warn?: string;
+  milestones?: [week: number, description: string][];
+}
+
+export interface LogPerson {
+  id?: string;
+  name: string;
+  where?: string;
+  stage?: 1 | 2 | 3 | 4;
+  last?: string;
+}
+
+export interface LogApproach {
+  where: string;
+  opener: string;
+  out: ApproachOutcome;
+  lesson: string;
 }
 
 export type DiffDecision = 'accepted' | 'edited' | 'rejected';

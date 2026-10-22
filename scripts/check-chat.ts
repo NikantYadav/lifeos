@@ -12,6 +12,8 @@ state.counts = structuredClone(SEED_COUNTS);
 state.weekGoals = { ...SEED_WEEK_GOALS };
 state.tasks = [{ id: 't1', title: 'x', detail: '', triggerWeek: 0, status: 'pending', createdAt: 1 }];
 state.habits = [{ id: 'h1', title: 'y', cadence: { kind: 'everyNDays', n: 2 }, createdAt: 1 }];
+state.approaches = [{ id: 'a1', date: '2026-10-21', where: 'cafe', opener: 'hi', out: 'good', lesson: 'SECRETLESSON' }];
+state.weights = [1, 2, 3, 4, 5, 6].map((i) => ({ id: 'w' + i, date: `2026-10-0${i}`, kg: 80 + i }));
 state.people = [{ id: 'p', name: 'Sam', where: 'gym', stage: 2, last: '2026-10-01' }];
 
 const ids = { taskIds: new Set(['t1']), habitIds: new Set(['h1']) };
@@ -107,14 +109,169 @@ assert.equal(ctx.now.date, '2026-10-23');
 assert.equal(ctx.now.weekday, 'Friday');
 assert.equal(ctx.now.time, '01:30');
 assert.ok(ctx.schedule.find((d) => d.dayOfWeek === 3)!.rows.every((x, i) => x.index === i));
-assert.deepEqual(ctx.people, [{ name: 'Sam', stage: 2 }]);
+assert.deepEqual(ctx.people, [{ id: 'p', name: 'Sam', where: 'gym', stage: 2, last: '2026-10-01' }]);
 const prompt = buildSystemPrompt(state, new Date());
 for (const p of state.plans) {
   if (p.bad) assert.ok(!prompt.includes(p.bad), 'bad leaked');
   for (const a of p.ask ?? []) assert.ok(!prompt.includes(a), 'ask leaked');
 }
-assert.ok(!prompt.includes('lesson'));
+assert.ok(!prompt.includes('SECRETLESSON'));
 assert.ok(JSON.stringify(CHAT_RESPONSE_SCHEMA).includes('scheduleRow'));
+
+// ---------- v2 kinds ----------
+const NOW = new Date('2026-10-22T06:00:00Z'); // 11:30 Thu 22 Oct IST
+const chatN = { ...ids, state, now: NOW };
+const runN = (d: object) => sanitizeDiffs([d], chatN);
+const sch = state.schedule;
+const keyBlockKey = Object.values(sch).flatMap(([, rs]) => rs).find((x) => x[3] && x[4])![4]!;
+
+// plan milestones: structured list -> after, sorted; before from real state; both modes
+const ms = [{ week: 6, description: 'B' }, { week: 2, description: 'A' }];
+for (const o of [chat, { ...ids, plans: state.plans }] as const) {
+  r = run({ kind: 'plan', planId, field: 'milestones', milestones: ms, before: 'junk', after: 'junk', reason: 'r' }, o as never);
+  assert.equal(r.length, 1);
+  assert.deepEqual(r[0].after, [[2, 'A'], [6, 'B']]);
+  assert.deepEqual(r[0].before, (state.plans[0].milestones ?? []).map(([w, d]) => [w, d]));
+}
+assert.deepEqual(run({ kind: 'plan', planId, field: 'milestones', after: [[3, 'x']], reason: '' })[0].after, [[3, 'x']]);
+for (const bad of [
+  undefined, 'a string', [{ week: -1, description: 'x' }], [{ week: 31, description: 'x' }], [{ week: 1.5, description: 'x' }],
+  [{ week: 1, description: '' }], [{ week: 1, description: 'x'.repeat(201) }], [{ week: 1, description: 'a' }, { week: 1, description: 'b' }],
+  Array.from({ length: 21 }, (_, i) => ({ week: i, description: 'x' })),
+]) assert.equal(run({ kind: 'plan', planId, field: 'milestones', milestones: bad, reason: '' }).length, 0, JSON.stringify(bad));
+assert.equal(run({ kind: 'plan', planId: 'nope', field: 'milestones', milestones: ms, reason: '' }).length, 0);
+assert.equal(sanitizeDiffs([{ kind: 'plan', planId, field: 'milestones', milestones: ms, reason: '' }], ids).length, 0); // review w/o plans
+assert.equal(run({ kind: 'plan', planId, field: 'milestones', milestones: Array.from({ length: 20 }, (_, i) => ({ week: i, description: 'x' })), reason: '' }).length, 1);
+
+// habit retime
+r = run({ kind: 'habit', op: 'retime', existingId: 'h1', cadence: { kind: 'everyNWeeks', n: 2 }, before: 'x', reason: '' });
+assert.equal(r.length, 1);
+assert.deepEqual(r[0].before, { kind: 'everyNDays', n: 2 });
+assert.deepEqual(r[0].after, { kind: 'everyNWeeks', n: 2 });
+assert.deepEqual(r[0].cadence, { kind: 'everyNWeeks', n: 2 });
+for (const bad of [{ existingId: 'ghost', cadence: { kind: 'everyNDays', n: 1 } }, { existingId: 'h1' }, { existingId: 'h1', cadence: { kind: 'everyNDays', n: 0 } }])
+  assert.equal(run({ kind: 'habit', op: 'retime', ...bad, reason: '' }).length, 0);
+
+// newPlan
+const np = { id: 'running', name: 'Running', aim: 'Sub-25 5K', when: ['AM', ' '], how: ['run'], warn: 'w', milestones: [{ week: 4, description: 'm' }], bad: 'BAD', ask: ['ASK'] };
+r = run({ kind: 'newPlan', plan: np, before: 'x', after: 'y', reason: 'r' });
+assert.equal(r.length, 1);
+assert.equal(r[0].before, null);
+assert.deepEqual(r[0].after, r[0].plan);
+assert.deepEqual(r[0].plan, { id: 'running', name: 'Running', aim: 'Sub-25 5K', when: ['AM'], how: ['run'], warn: 'w', milestones: [[4, 'm']] });
+assert.ok(!JSON.stringify(r).includes('BAD') && !JSON.stringify(r).includes('ASK'));
+for (const bad of [{ id: 'X' }, { id: 'a' }, { id: planId }, { name: ' ' }, { aim: '' }, { milestones: [{ week: 99, description: 'x' }] }])
+  assert.equal(run({ kind: 'newPlan', plan: { ...np, ...bad }, reason: '' }).length, 0, JSON.stringify(bad));
+assert.equal(run({ kind: 'newPlan', reason: '' }).length, 0);
+assert.equal(sanitizeDiffs([{ kind: 'newPlan', plan: np, reason: '' }], ids).length, 0); // review rejects
+assert.equal(sanitizeDiffs([{ kind: 'newPlan', plan: np, reason: '' }, { kind: 'newPlan', plan: np, reason: '' }], chatN).length, 1); // dup id in batch
+
+// check
+const ck = state.checks[0];
+r = run({ kind: 'check', op: 'add', key: 'stretch', label: 'Stretch', sub: '10 min', days: [5, 1, 1], before: 'x', reason: '' });
+assert.deepEqual(r[0].after, ['stretch', 'Stretch', '10 min', [1, 5]]);
+assert.equal(r[0].before, null);
+r = run({ kind: 'check', op: 'add', key: 'stretch', label: 'Stretch', reason: '' });
+assert.deepEqual(r[0].after, ['stretch', 'Stretch', '']);
+assert.equal(r[0].days, null);
+r = run({ kind: 'check', op: 'update', key: ck[0], days: [0, 6], reason: '' });
+assert.deepEqual(r[0].before, ck);
+assert.deepEqual(r[0].after, [ck[0], ck[1], ck[2], [0, 6]]);
+r = run({ kind: 'check', op: 'update', key: ck[0], label: 'New label', days: null, reason: '' });
+assert.deepEqual(r[0].after, [ck[0], 'New label', ck[2]]);
+r = run({ kind: 'check', op: 'update', key: ck[0], label: 'New label', reason: '' }); // days untouched
+assert.deepEqual(r[0].after, ck[3] ? [ck[0], 'New label', ck[2], ck[3]] : [ck[0], 'New label', ck[2]]);
+r = run({ kind: 'check', op: 'remove', key: ck[0], reason: '' });
+assert.deepEqual(r[0].before, ck); assert.equal(r[0].after, null);
+for (const bad of [
+  { op: 'add', key: ck[0], label: 'x' }, { op: 'add', key: 'Bad Key', label: 'x' }, { op: 'add', key: 'a', label: 'x' },
+  { op: 'add', key: 'okk' }, { op: 'add', key: 'okk', label: ' ' }, { op: 'add', key: 'okk', label: 'x', days: [7] },
+  { op: 'add', key: 'okk', label: 'x', days: [1.5] }, { op: 'add', key: 'okk', label: 'x', days: 'mon' },
+  { op: 'update', key: 'ghost', label: 'x' }, { op: 'update', key: ck[0], label: '' }, { op: 'update', key: ck[0], label: ck[1], sub: ck[2], days: ck[3] ?? null },
+  { op: 'remove', key: 'ghost' }, { op: 'bogus', key: ck[0] },
+]) assert.equal(run({ kind: 'check', ...bad, reason: '' }).length, 0, JSON.stringify(bad));
+assert.equal(sanitizeDiffs([{ kind: 'check', op: 'remove', key: ck[0], reason: '' }], ids).length, 0);
+
+// count
+const cn = state.counts[0];
+state.weekGoals[cn[0]] = 5;
+r = run({ kind: 'count', op: 'add', key: 'pushups', label: 'Push-ups', weekGoal: 300, reason: '' });
+assert.deepEqual(r[0].after, ['pushups', 'Push-ups']); assert.equal(r[0].before, null); assert.equal(r[0].weekGoal, 300);
+r = run({ kind: 'count', op: 'add', key: 'pushups', label: 'Push-ups', reason: '' });
+assert.equal(r[0].weekGoal, undefined);
+r = run({ kind: 'count', op: 'remove', key: cn[0], reason: '' });
+assert.deepEqual(r[0].before, cn); assert.equal(r[0].after, null); assert.equal(r[0].weekGoal, 5);
+for (const bad of [
+  { op: 'add', key: cn[0], label: 'x' }, { op: 'add', key: 'Nope!', label: 'x' }, { op: 'add', key: 'okk' },
+  { op: 'add', key: 'okk', label: 'x', weekGoal: 0 }, { op: 'add', key: 'okk', label: 'x', weekGoal: -1 }, { op: 'add', key: 'okk', label: 'x', weekGoal: 'a' },
+  { op: 'remove', key: 'ghost' }, { op: 'update', key: cn[0], label: 'x' },
+]) assert.equal(run({ kind: 'count', ...bad, reason: '' }).length, 0, JSON.stringify(bad));
+
+// log: check
+state.days['2026-10-21'] = { c: { [ck[0]]: true }, n: { [cn[0]]: 3 } };
+r = runN({ kind: 'log', target: 'check', date: '2026-10-21', key: ck[0], done: false, before: 'x', reason: '' });
+assert.equal(r[0].before, true); assert.equal(r[0].after, false); assert.equal(r[0].done, false);
+r = runN({ kind: 'log', target: 'check', date: '2026-10-22', key: ck[0], done: true, reason: '' });
+assert.equal(r[0].before, false);
+assert.equal(runN({ kind: 'log', target: 'check', date: '2026-10-22', key: keyBlockKey, done: true, reason: '' }).length, 1);
+for (const bad of [{ key: 'ghost', done: true }, { key: ck[0] }, { key: ck[0], done: 'yes' }, { done: true }])
+  assert.equal(runN({ kind: 'log', target: 'check', date: '2026-10-22', ...bad, reason: '' }).length, 0, JSON.stringify(bad));
+// dates: window today-14..today
+for (const [dt, ok] of [['2026-10-22', 1], ['2026-10-08', 1], ['2026-10-07', 0], ['2026-10-23', 0], ['2026-02-30', 0], ['22-10-2026', 0], [undefined, 0]] as const)
+  assert.equal(runN({ kind: 'log', target: 'check', date: dt, key: ck[0], done: true, reason: '' }).length, ok, String(dt));
+// log: count (absolute), before filled from state
+r = runN({ kind: 'log', target: 'count', date: '2026-10-21', key: cn[0], value: 5, reason: '' });
+assert.equal(r[0].before, 3); assert.equal(r[0].after, 5); assert.equal(r[0].value, 5);
+assert.equal(runN({ kind: 'log', target: 'count', date: '2026-10-22', key: cn[0], value: 0, reason: '' })[0].before, 0);
+for (const bad of [{ key: 'ghost', value: 1 }, { key: cn[0], value: -1 }, { key: cn[0] }, { key: cn[0], value: 'a' }, { key: cn[0], value: NaN }])
+  assert.equal(runN({ kind: 'log', target: 'count', date: '2026-10-22', ...bad, reason: '' }).length, 0, JSON.stringify(bad));
+// log: weight
+r = runN({ kind: 'log', target: 'weight', date: '2026-10-22', kg: 80.4, reason: '' });
+assert.equal(r[0].before, null); assert.equal(r[0].after, 80.4);
+state.weights.push({ id: 'wx', date: '2026-10-21', kg: 81 });
+assert.equal(runN({ kind: 'log', target: 'weight', date: '2026-10-21', kg: 80.4, reason: '' })[0].before, 81);
+for (const kg of [29.9, 250.1, undefined, 'a']) assert.equal(runN({ kind: 'log', target: 'weight', date: '2026-10-22', kg, reason: '' }).length, 0, String(kg));
+assert.equal(runN({ kind: 'log', target: 'weight', date: '2026-10-22', kg: 30, reason: '' }).length, 1);
+// log: person
+r = runN({ kind: 'log', target: 'person', date: '2026-10-22', person: { name: ' Priya ', where: 'badminton', stage: 1 }, reason: '' });
+assert.deepEqual(r[0].person, { name: 'Priya', where: 'badminton', stage: 1 }); assert.equal(r[0].before, null);
+r = runN({ kind: 'log', target: 'person', date: '2026-10-22', person: { id: 'p', name: 'Sam', stage: 3, last: '2026-10-22' }, reason: '' });
+assert.deepEqual(r[0].before, state.people[0]); assert.deepEqual(r[0].after, { id: 'p', name: 'Sam', stage: 3, last: '2026-10-22' });
+assert.equal(runN({ kind: 'log', target: 'person', date: '2026-10-22', person: { id: 'p', name: '' , stage: 3 }, reason: '' })[0].person!.name, 'Sam');
+for (const person of [{ id: 'ghost', name: 'x' }, { name: '' }, { name: 'x', stage: 5 }, { name: 'x', stage: 0 }, { name: 'x', stage: 2.5 }, { name: 'x', last: 'yesterday' }, 'str', null, undefined])
+  assert.equal(runN({ kind: 'log', target: 'person', date: '2026-10-22', person, reason: '' }).length, 0, JSON.stringify(person));
+// log: approach
+r = runN({ kind: 'log', target: 'approach', date: '2026-10-22', approach: { where: 'Third Wave', opener: 'hey', out: 'ig', lesson: 'l' }, reason: '' });
+assert.equal(r[0].before, null); assert.deepEqual(r[0].after, { where: 'Third Wave', opener: 'hey', out: 'ig', lesson: 'l' });
+for (const approach of [{ where: 'x', out: 'great' }, { where: 'x' }, 'str', null])
+  assert.equal(runN({ kind: 'log', target: 'approach', date: '2026-10-22', approach, reason: '' }).length, 0, JSON.stringify(approach));
+assert.equal(runN({ kind: 'log', target: 'bogus', date: '2026-10-22', reason: '' }).length, 0);
+assert.equal(sanitizeDiffs([{ kind: 'log', target: 'weight', date: '2026-10-22', kg: 80, reason: '' }], ids).length, 0); // review rejects
+
+// milestoneCheck
+state.plans[0].milestones = [[3, 'Three things'], [6, 'Six things']];
+r = run({ kind: 'milestoneCheck', planId, week: 3, status: 'partial', note: ' meh ', description: 'FAKE', reason: '' });
+assert.equal(r[0].description, 'Three things'); assert.equal(r[0].before, null); assert.equal(r[0].note, 'meh');
+state.milestoneChecks = [{ id: 'm1', planId, week: 3, description: 'Three things', status: 'missed', checkedAt: '2026-10-01' }];
+assert.equal((run({ kind: 'milestoneCheck', planId, week: 3, status: 'hit', reason: '' })[0].before as { id: string }).id, 'm1');
+for (const bad of [{ week: 4, status: 'hit' }, { planId: 'ghost', week: 3, status: 'hit' }, { week: 3, status: 'great' }, { week: 3 }, { week: 3.5, status: 'hit' }])
+  assert.equal(run({ kind: 'milestoneCheck', planId, ...bad, reason: '' }).length, 0, JSON.stringify(bad));
+assert.equal(sanitizeDiffs([{ kind: 'milestoneCheck', planId, week: 3, status: 'hit', reason: '' }], ids).length, 0);
+
+// mixed batch: invalid diffs dropped individually
+assert.equal(sanitizeDiffs([{ kind: 'check', op: 'remove', key: 'ghost', reason: '' }, { kind: 'check', op: 'remove', key: ck[0], reason: '' }, 5], chatN).length, 1);
+
+// v2 context
+const ctx2 = buildChatContext(state, NOW);
+assert.deepEqual(ctx2.approachesLast14DaysByOutcome, { good: 1 });
+assert.equal(ctx2.recentWeights.length, 5);
+assert.ok(ctx2.counts.every((c) => 'weekGoal' in c));
+assert.equal(ctx2.last14Days['2026-10-21'].checks[ck[0]], true);
+assert.deepEqual(ctx2.plans[0].milestones, [{ week: 3, description: 'Three things' }, { week: 6, description: 'Six things' }]);
+assert.equal(ctx2.milestoneCheckIns.length, 1);
+assert.ok(buildSystemPrompt(state, NOW).includes('current week index is ' + ctx2.now.weekIndex));
+for (const k of ['newPlan', 'check', 'count', 'log', 'milestoneCheck', 'milestones', 'person', 'approach']) assert.ok(JSON.stringify(CHAT_RESPONSE_SCHEMA).includes(k), k);
+assert.ok(!JSON.stringify(CHAT_RESPONSE_SCHEMA).includes('"bad"'));
 
 // trimming
 const many = Array.from({ length: 40 }, (_, i) => ({ role: (i % 2 ? 'assistant' : 'user') as 'user' | 'assistant', text: 'm' + i }));

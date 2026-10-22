@@ -32,6 +32,15 @@ export const REVIEW_RESPONSE_SCHEMA = {
           title: { type: 'string' },
           detail: { type: 'string' },
           triggerWeek: { type: 'integer' },
+          // plan field "milestones": the FULL replacement list; the sanitizer maps it to `after`.
+          milestones: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: { week: { type: 'integer' }, description: { type: 'string' } },
+              required: ['week', 'description'],
+            },
+          },
           before: { type: 'string' },
           after: { type: 'string' },
           reason: { type: 'string' },
@@ -47,7 +56,7 @@ export function buildReviewPrompt(context: ReviewContext): string {
   return `You are drafting a factual weekly plan-diff proposal for a personal self-improvement tracker. You are not writing motivational content.
 
 There are five kinds of diff you may propose:
-1. kind "plan" — change a plan's "aim", "when", "where", "how", "quota", "warn", or "milestones" field. Set planId and field. Never propose a change to a plan's "bad" or "ask" fields — they do not appear as valid "field" values and any diff naming them will be discarded.
+1. kind "plan" — change a plan's "aim", "when", "where", "how", "quota", "warn", or "milestones" field. Set planId and field. Never propose a change to a plan's "bad" or "ask" fields — they do not appear as valid "field" values and any diff naming them will be discarded. For field "milestones", put the COMPLETE replacement list in the structured "milestones" array ([{week, description}], weeks 0-based as in the data, weeks 0-30, description max 200 chars, max 20 entries), starting from that plan's current milestones in the data; do not use "after" for milestones.
 2. kind "schedule" — change a schedule day's label. Set dayOfWeek.
 3. kind "weekGoals" — change a weekly numeric target. Set key.
 4. kind "task" — add, drop, or retime a one-shot task from pendingTasks. Set op to "add" (with title, detail, triggerWeek, and optionally planId), "drop" (with existingId — must be an id from pendingTasks), or "retime" (with existingId and a new triggerWeek).
