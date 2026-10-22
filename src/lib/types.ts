@@ -129,18 +129,28 @@ export interface MilestoneCheckIn {
  * nothing here writes to AppState until the user applies it.
  */
 export interface ProposedDiff {
-  kind: 'plan' | 'schedule' | 'weekGoals' | 'task' | 'habit';
+  kind: 'plan' | 'schedule' | 'weekGoals' | 'task' | 'habit' | 'scheduleRow';
   planId?: string;
   field?: 'aim' | 'when' | 'where' | 'how' | 'quota' | 'warn' | 'milestones';
   dayOfWeek?: number;
   key?: string;
 
-  /** task/habit diffs only. 'add' has no existingId; 'drop'/'retime' require one. */
-  op?: 'add' | 'drop' | 'retime';
+  /**
+   * task/habit diffs: 'add' has no existingId; 'drop'/'retime' require one.
+   * scheduleRow diffs: 'add' | 'update' | 'remove'.
+   */
+  op?: 'add' | 'drop' | 'retime' | 'update' | 'remove';
   existingId?: string;
   title?: string;
   detail?: string;
   triggerWeek?: number;
+
+  /** scheduleRow only: 0-based position in schedule[dayOfWeek][1] (insertion position for 'add'). */
+  index?: number;
+  /** scheduleRow add/update: the new row, [time, title, note, isKeyBlock 0|1, planId|null, week A|B|null]. */
+  row?: [time: string, title: string, note: string, isKeyBlock: number, planId: string | null, week: AltWeek | null];
+  /** habit add only (chat): optional cadence; client defaults to weekly when absent. */
+  cadence?: HabitCadence;
 
   before: unknown;
   after: unknown;
